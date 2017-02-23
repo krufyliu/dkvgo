@@ -31,8 +31,8 @@ var schedulerAddHelp = "Schduler tcp addr, non empty, eg 127.0.0.1:8765. Defualt
 var maxRetryHelp = "Max retry times when lost connection."
 var maxRetryWaitTimeHelp = "Max wait time before next connection."
 
-var errAddrEmpty = errors.New("Scheduler tcp addr")
-var errBadAddr = errors.New("Bad scheduler tcp addr")
+var errAddrEmpty = errors.New("scheduler tcp addr")
+var errBadAddr = errors.New("bad scheduler tcp addr")
 
 var workerFlagSet = flag.NewFlagSet("worker", flag.ContinueOnError)
 
