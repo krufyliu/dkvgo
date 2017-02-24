@@ -19,6 +19,7 @@ const BinMap = map[string]string{
 	"TOP_BOTTOM":  "test_top_and_bottom",
 }
 
+// CmdGenerator hold task options to generate exec.Cmd or shell command
 type CmdGenerator struct {
 	taskOptions      *TaskOptions
 	binDirecotry     string
@@ -40,9 +41,8 @@ func (cg *CmdGenerator) getFinalOuptutDir() string {
 	outputDir := cg.taskOptions.OutputDir
 	if strings.ToUpper(cg.taskOptions.Algorithm) == "TOP_BOTTOM" {
 		return outputDir
-	} else {
-		return path.Join(outputDir, cg.taskOptions.Algorithm)
 	}
+	return path.Join(outputDir, cg.taskOptions.Algorithm)
 }
 
 func (cg *CmdGenerator) getCameraSettingFileName() string {
@@ -76,12 +76,12 @@ func (cg *CmdGenerator) getCmdOpts() map[string]string {
 }
 
 func (cg *CmdGenerator) getCmd() *exec.Cmd {
-	args = MapToCmdArgs(cg.getCmdOpts(), "-")
+	args = mapToCmdArgs(cg.getCmdOpts(), "-")
 	return &exec.Command(path.Join(cg.binDirecotry, cg.getBinName), args...)
 }
 
 func (cg *CmdGenerator) getCmdLine() string {
-	args = MapToCmdArgs(cg.getCmdOpts(), "-")
+	args = mapToCmdArgs(cg.getCmdOpts(), "-")
 	executable = path.Join(cg.binDirecotry, cg.getBinName())
 	return executable + " " + strings.Join(args, " ")
 }
