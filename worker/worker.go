@@ -5,15 +5,23 @@ import (
 	"log"
 	"net"
 	"os/exec"
+	"github.com/krufyliu/dkvgo/protocol"
+	"bufio"
 )
 
 // ErrReachMaxRetryTime means can not connect
-const ErrReachMaxRetryTime = errors.New("reach max retry times")
+var (
+	ErrReachMaxRetryTime = errors.New("reach max retry times")
+	ErrVersionNoMatch = errors.New("version does not match")
+	ErrResponseStatus = errors.New("bad reponse status")
+)
+
 
 // Worker define worker struct
 type Worker struct {
 	options    *Options
 	connection *net.TCPConn
+	reader *bufio.Reader
 	cmd        *exec.Cmd
 	sessionID  string
 	retry      int
@@ -42,10 +50,11 @@ func (w *Worker) connect() error {
 	return nil
 }
 
-func (w *worker) reconnect() error {
+func (w *Worker) reconnect() error {
 	for {
 		if w.retry > w.options.maxRetryWaitTime {
 			log.Fatal(ErrReachMaxRetryTime)
+			break
 		}
 
 	}
@@ -71,22 +80,58 @@ func (w *Worker) stop() {
 
 func (w *Worker) nextWaitTime() int {
 	w.waitTime += 5
-	if w.nextWaitTime > w.options.maxRetryWaitTime {
+	if w.waitTime > w.options.maxRetryWaitTime {
 		w.waitTime = 1
 	}
 	return w.waitTime
 }
 
+func (w *Worker) bufferReader() *bufio.Reader {
+	if w.reader != nil {
+		return w.reader
+	}
+	return bufio.NewReader(w.connection)
+}
+
 func (w *Worker) register() error {
-	return nil
+	var req *protocol.DkvRequst
+	if w.sessionID != ""  {
+		req = protocol.NewDkvRequest("REGISTER", []string{w.sessionID})
+	} else {
+		req = protocol.NewDkvRequest("REGISTER", []string{})
+	}
+	message, err := req.Dumps()
+	if err != nil {
+		return nil
+	}
+	_, err = w.connection.Write(message)
+	if err != nil {
+		return nil
+	}
+	res, err := w.expectResponse()
+	if err != nil {
+		return err
+	}
+	if res.Version != "V1.0" && res.Status != "OK" {
+		return ErrVersionNoMatch
+	}
+	if err := res.PullContent(w.bufferReader()); err != nil {
+		return nil
+	}
+
+}
+
+func (w *Worker) expectResponse() (*protocol.DkvResponse, error) {
+	var res = &protocol.DkvResponse{}
+	if err := res.PullHeader(w.bufferReader()); err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 // RunForever start a forerver goroutine
 func (w *Worker) RunForever() {
-	for {
-		if err := w.connect(); err != nil {
-			log.Printf("Error: %s\n", err.Error())
-			w.reconnect()
-		}
-	}
+	w.connect()	
+	w.register()
+
 }
