@@ -15,6 +15,7 @@ type Worker struct {
 	options    *Options
 	connection *net.TCPConn
 	cmd        *exec.Cmd
+	sessionID  string
 	retry      int
 	waitTime   int
 }
