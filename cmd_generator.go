@@ -73,6 +73,10 @@ func (cg *CmdGenerator) getCameraSettingFileName() string {
 
 func (cg *CmdGenerator) getCmdOpts() map[string]string {
 	var videoDir = cg.task.VideoDir
+	var startFrame = cg.segOptions.StartFrame
+	if cg.segOptions.FrameAt > cg.segOptions.StartFrame {
+		startFrame = cg.segOptions.FrameAt
+	}
 	var opts = map[string]string{
 		"video_dir":           videoDir,
 		"output_dir":          cg.getFinalOuptutDir(),
@@ -83,7 +87,7 @@ func (cg *CmdGenerator) getCmdOpts() map[string]string {
 		"camera_setting_file": path.Join(cg.settingDirectory, cg.getCameraSettingFileName()),
 		"enable_top":          cg.task.EnableTop,
 		"enable_bottom":       cg.task.EnableBottom,
-		"start_frame":         strconv.Itoa(cg.segOptions.StartFrame),
+		"start_frame":         strconv.Itoa(startFrame),
 		"end_frame":           strconv.Itoa(cg.segOptions.EndFrame),
 		"time_alignment_file": path.Join(videoDir, "time.txt"),
 		"save_type":           cg.getSaveType(),
@@ -92,7 +96,8 @@ func (cg *CmdGenerator) getCmdOpts() map[string]string {
 	return opts
 }
 
-func (cg *CmdGenerator) getCmd() *exec.Cmd {
+// GetCmd get a exec.Cmd
+func (cg *CmdGenerator) GetCmd() *exec.Cmd {
 	args := MapToCmdArgs(cg.getCmdOpts(), "-")
 	return exec.Command(path.Join(cg.binDirecotry, cg.getBinName()), args...)
 }

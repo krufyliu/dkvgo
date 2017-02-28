@@ -32,5 +32,5 @@ func Test_CmdG(t *testing.T) {
 		},
 	}
 	cmdG := NewCmdGeneratorFromTaskSegment(&seg, 0, "/usr/bin", "/etc")
-	t.Log(cmdG.getCmd())
+	t.Log(cmdG.GetCmd())
 }
