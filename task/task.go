@@ -1,4 +1,4 @@
-package dkvgo
+package task
 
 // TaskSplitNum define split level
 const TaskSplitNum = 5

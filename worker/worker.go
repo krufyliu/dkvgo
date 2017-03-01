@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"bufio"
 	"errors"
 	"log"
 	"net"
@@ -8,25 +9,37 @@ import (
 
 	"os"
 
-	"github.com/krufyliu/dkvgo"
+	"io"
+
+	"github.com/krufyliu/dkvgo/task"
 )
 
 // ErrReachMaxRetryTime means can not connect
 var (
 	ErrReachMaxRetryTime = errors.New("reach max retry times")
-	ErrVersionNoMatch    = errors.New("version does not match")
-	ErrResponseStatus    = errors.New("bad reponse status")
 )
+
+// Context define the context of DkvWorker
+type Context struct {
+	taskSeg   *task.TaskSegment
+	cmd       *exec.Cmd
+	state     *task.RunState
+	joined    bool
+	sessionID string
+}
 
 // DkvWorker define worker struct
 type DkvWorker struct {
 	options    *Options
 	connection *net.TCPConn
-	taskSeg    *dkvgo.TaskSegment
-	cmd        *exec.Cmd
-	sessionID  string
+	context    *Context
 	retry      int
 	waitTime   int
+	// taskSeg    *task.TaskSegment
+	// cmd        *exec.Cmd
+	// state      *task.RunState
+	// joined     bool
+	// sessionID  string
 }
 
 // NewDkvWorker create a new worker
@@ -57,7 +70,6 @@ func (w *DkvWorker) reconnect() error {
 			log.Fatal(ErrReachMaxRetryTime)
 			break
 		}
-
 	}
 	return nil
 }
@@ -76,8 +88,8 @@ func (w *DkvWorker) stopTask() {
 }
 
 func (w *DkvWorker) stop() {
-	w.stopTask()
 	w.closeConnection()
+	w.stopTask()
 }
 
 func (w *DkvWorker) nextWaitTime() int {
@@ -88,23 +100,48 @@ func (w *DkvWorker) nextWaitTime() int {
 	return w.waitTime
 }
 
-func (w *DkvWorker) runTask() {
-	_, wd, err := os.Pipe()
+func (w *DkvWorker) setSessionID(sessionID string) {
+	if w.context.sessionID != "" && w.context.sessionID != sessionID {
+		w.stopTask()
+		w.context.sessionID = sessionID
+	}
+}
+
+func (w *DkvWorker) runTask(t *task.TaskSegment) {
+	w.context.taskSeg = t
+	w.context.cmd = task.NewCmdGeneratorFromTaskSegment(t, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting").GetCmd()
+	rd, wd, err := os.Pipe()
+	defer rd.Close()
+	defer wd.Close()
 	if err != nil {
 		log.Fatalln(err)
 	}
-
+	go w.collectTaskStatus(rd)
 	w.cmd.Stdout = wd
-	w.cmd.Stderr = nil
+	w.cmd.Stderr = os.Stderr
 	err = w.cmd.Run()
 	if err != nil {
-		if value, ok := err.(*exec.ExitError); ok {
-			log.Println(value)
+		log.Printf("task %d exited unexpected: %s\n", t.Task.ID, value.String())
+	} else {
+		log.Printf("task %d is done\n", t.Task.ID)
+	}
+}
+
+func (w *DkvWorker) collectTaskStatus(r io.Reader) {
+	reader := bufio.NewReader(r)
+	for {
+		state, err := matchState(reader)
+		if err != nil && err != io.EOF {
+			return
 		}
-		log.Fatalln(err)
+		if err == io.EOF {
+			break
+		}
+		w.state = state
 	}
 }
 
 // RunForever start a forerver goroutine
 func (w *DkvWorker) RunForever() {
+	w.connect()
 }

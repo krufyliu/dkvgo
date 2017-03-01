@@ -1,4 +1,4 @@
-package dkvgo
+package util
 
 // MapToCmdArgs convert a map[string]string to args string slice
 func MapToCmdArgs(m map[string]string, tag string) []string {

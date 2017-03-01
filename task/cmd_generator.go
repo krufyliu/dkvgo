@@ -1,4 +1,4 @@
-package dkvgo
+package task
 
 import (
 	"fmt"
@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/krufyliu/dkvgo/util"
 )
 
 // BinMap define composition algorithm to executable
@@ -98,12 +100,12 @@ func (cg *CmdGenerator) getCmdOpts() map[string]string {
 
 // GetCmd get a exec.Cmd
 func (cg *CmdGenerator) GetCmd() *exec.Cmd {
-	args := MapToCmdArgs(cg.getCmdOpts(), "-")
+	args := util.MapToCmdArgs(cg.getCmdOpts(), "-")
 	return exec.Command(path.Join(cg.binDirecotry, cg.getBinName()), args...)
 }
 
 func (cg *CmdGenerator) getCmdLine() string {
-	args := MapToCmdArgs(cg.getCmdOpts(), "-")
+	args := util.MapToCmdArgs(cg.getCmdOpts(), "-")
 	executable := path.Join(cg.binDirecotry, cg.getBinName())
 	return executable + " " + strings.Join(args, " ")
 }

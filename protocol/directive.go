@@ -1,23 +1,18 @@
 package protocol
 
 const (
-    _  = 0x00
-    Register = iota
-    RegisterSuccess
-    RegisterFailed
+	Join = iota + 1
+	JoinAccept
+	JoinReject
 
-    SubmitTask
-    SubmitTaskSuccess
-    SubmitTaskFailed
+	TaskSubmit
+	TaskSumbitAccept
+	TaskSubmitReject
 
-    Ping
-    Pong
+	Ping
+	Pong
 
-    Trace
-    TraceSuccess
-    TraceFailed
-
-    StopTask
-    StopTaskSuccess
-    StopTaskFailed
+	TaskStop
+	TaskStopAccept
+	TaskStopReject
 )

@@ -3,10 +3,17 @@ package worker
 import (
 	"bufio"
 	"encoding/json"
-	"github.com/krufyliu/dkvgo"
-	"github.com/krufyliu/dkvgo/protocol"
+	"errors"
 	"log"
 	"net"
+
+	"github.com/krufyliu/dkvgo/protocol"
+	"github.com/krufyliu/dkvgo/task"
+)
+
+var (
+	ErrVersionNoMatch = errors.New("protocol version does not match")
+	ErrResponseStatus = errors.New("bad response status")
 )
 
 type IOLoop struct {
@@ -61,12 +68,12 @@ func (ioloop *IOLoop) Register() error {
 }
 
 func (ioloop *IOLoop) RunTask(req *protocol.DkvRequst) {
-	var taskSegment dkvgo.TaskSegment
+	var taskSegment task.TaskSegment
 	if err := json.Unmarshal(req.Payload, &taskSegment); err != nil {
 		log.Fatalln(err)
 	}
 	ioloop.seedResponse(protocol.NewDkvResponse("OK"))
-	cmdgen := dkvgo.NewCmdGeneratorFromTaskSegment(&taskSegment, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting")
+	cmdgen := task.NewCmdGeneratorFromTaskSegment(&taskSegment, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting")
 	ioloop.context.taskSeg = &taskSegment
 	ioloop.context.cmd = cmdgen.GetCmd()
 }
