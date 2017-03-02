@@ -23,7 +23,6 @@ func Test_TaskToJson(t *testing.T) {
 		EnableTop:         "1",
 		Quality:           "8k",
 		EanbleColorAdjust: "1",
-		FrameAt:           1200,
 	}
 	var out []byte
 	var err error

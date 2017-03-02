@@ -37,7 +37,7 @@ type Context struct {
 // DkvWorker define worker struct
 type DkvWorker struct {
 	options    *Options
-	connection *net.TCPConn
+	connection net.Conn
 	context    *Context
 	retry      int
 	waitTime   int
@@ -60,7 +60,7 @@ func NewDkvWorker(opts *Options) *DkvWorker {
 }
 
 func (w *DkvWorker) connect() error {
-	conn, err := net.DialTCP("tcp", nil, w.options.schedulerAddr)
+	conn, err := net.Dial("tcp", w.options.schedulerAddr)
 	if err != nil {
 		return err
 	}

@@ -21,7 +21,6 @@ type Task struct {
 	EnableTop         string            `json:"enable_top"`
 	Quality           string            `json:"quality"`
 	EanbleColorAdjust string            `json:"enable_coloradjust"`
-	FrameAt           int               `json:"frame_at"`
 	SegOpts           []*SegmentOptions `json:"-"`
 }
 

@@ -14,7 +14,7 @@ const DefaultSchedulerPort = 7654
 
 // Options define worker runtime option
 type Options struct {
-	schedulerAddr    *net.TCPAddr
+	schedulerAddr    string
 	maxRetry         int
 	maxRetryWaitTime int
 }
@@ -66,7 +66,7 @@ func (opt *Options) fromCmdArgs(args []string) error {
 		return errBadAddr
 	}
 
-	opt.schedulerAddr = tcpAddr
+	opt.schedulerAddr = schedulerAddr
 	opt.maxRetry = maxRetry
 	opt.maxRetryWaitTime = maxRetryWaitTime
 	return nil
