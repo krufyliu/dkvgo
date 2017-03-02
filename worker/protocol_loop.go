@@ -35,10 +35,10 @@ func (loop *ProtocolLoop) reader() io.Reader {
 
 func (loop *ProtocolLoop) register() error {
 	var pack *protocol.Package
-	if loop.context.sessionID == "" {
+	if loop.context.getSessionID() == "" {
 		pack = protocol.NewPackage(protocol.Join)
 	} else {
-		pack = protocol.NewPackageWithPayload(protocol.Join, []byte(loop.context.sessionID))
+		pack = protocol.NewPackageWithPayload(protocol.Join, []byte(loop.context.getSessionID()))
 	}
 	if err := loop.sendPackage(pack); err != nil {
 		return err
@@ -84,15 +84,19 @@ func (loop *ProtocolLoop) execDirective(pack *protocol.Package) error {
 }
 
 func (loop *ProtocolLoop) handleTaskSubmit(pack *protocol.Package) error {
-	var taskSeg task.TaskSegment
-	if err := json.Unmarshal(pack.Payload, &taskSeg); err != nil {
+	var taskSeg = new(task.TaskSegment)
+	if err := json.Unmarshal(pack.Payload, taskSeg); err != nil {
 		return err
 	}
+	loop.context.setSessionState(TaskSubmitAccepted)
+	loop.context.runTask(taskSeg)
 	var answer = protocol.NewPackage(protocol.TaskSumbitAccept)
 	return loop.sendPackage(answer)
 }
 
 func (loop *ProtocolLoop) handleTaskStop(pack *protocol.Package) error {
+	loop.context.setSessionState(TaskStopAccepted)
+	loop.context.stopTask()
 	return nil
 }
 

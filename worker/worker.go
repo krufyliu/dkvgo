@@ -19,13 +19,19 @@ var (
 	ErrReachMaxRetryTime = errors.New("reach max retry times")
 )
 
+const (
+	TaskSubmitAccepted = 1000
+	TaskStopAccepted   = 1001
+)
+
 // Context define the context of DkvWorker
 type Context struct {
-	taskSeg   *task.TaskSegment
-	cmd       *exec.Cmd
-	state     *task.RunState
-	joined    bool
-	sessionID string
+	taskSeg      *task.TaskSegment
+	cmd          *exec.Cmd
+	state        *task.RunState
+	sessionState int
+	joined       bool
+	sessionID    string
 }
 
 // DkvWorker define worker struct
@@ -47,7 +53,7 @@ func NewDkvWorker(opts *Options) *DkvWorker {
 	return &DkvWorker{
 		options:    opts,
 		connection: nil,
-		cmd:        nil,
+		context:    new(Context),
 		retry:      0,
 		waitTime:   1,
 	}
@@ -81,9 +87,13 @@ func (w *DkvWorker) closeConnection() error {
 	return w.connection.Close()
 }
 
+func (w *DkvWorker) setSessionState(state int) {
+	w.context.sessionState = state
+}
+
 func (w *DkvWorker) stopTask() {
-	if w.cmd != nil && w.cmd.ProcessState != nil && !w.cmd.ProcessState.Exited() {
-		w.cmd.Process.Kill()
+	if w.context.cmd != nil && w.context.cmd.ProcessState != nil && !w.context.cmd.ProcessState.Exited() {
+		w.context.cmd.Process.Kill()
 	}
 }
 
@@ -107,6 +117,10 @@ func (w *DkvWorker) setSessionID(sessionID string) {
 	}
 }
 
+func (w *DkvWorker) getSessionID() string {
+	return w.context.sessionID
+}
+
 func (w *DkvWorker) runTask(t *task.TaskSegment) {
 	w.context.taskSeg = t
 	w.context.cmd = task.NewCmdGeneratorFromTaskSegment(t, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting").GetCmd()
@@ -117,11 +131,11 @@ func (w *DkvWorker) runTask(t *task.TaskSegment) {
 		log.Fatalln(err)
 	}
 	go w.collectTaskStatus(rd)
-	w.cmd.Stdout = wd
-	w.cmd.Stderr = os.Stderr
-	err = w.cmd.Run()
+	w.context.cmd.Stdout = wd
+	w.context.cmd.Stderr = os.Stderr
+	err = w.context.cmd.Run()
 	if err != nil {
-		log.Printf("task %d exited unexpected: %s\n", t.Task.ID, value.String())
+		log.Printf("task %d exited unexpected: %s\n", t.Task.ID, err)
 	} else {
 		log.Printf("task %d is done\n", t.Task.ID)
 	}
@@ -137,7 +151,7 @@ func (w *DkvWorker) collectTaskStatus(r io.Reader) {
 		if err == io.EOF {
 			break
 		}
-		w.state = state
+		w.context.state = state
 	}
 }
 
