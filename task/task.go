@@ -57,4 +57,5 @@ type SegmentOptions struct {
 type TaskSegment struct {
 	Task    *Task
 	Options *SegmentOptions
+	Done    bool
 }

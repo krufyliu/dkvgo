@@ -42,3 +42,7 @@ func (store MockStore) UpdateTask(t *task.Task) bool {
 func (store MockStore) SaveTaskState(t *task.Task) bool {
 	return true
 }
+
+func (store MockStore) SaveTaskState(t *task.Task) bool {
+	return true
+}

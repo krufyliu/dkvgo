@@ -11,4 +11,6 @@ type TaskStore interface {
 	UpdateTask(t *task.Task) bool
 
 	SaveTaskState(t *task.Task) bool
+
+	LoadTaskState(t *task.Task) bool
 }
