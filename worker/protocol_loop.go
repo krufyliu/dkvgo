@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 
 	"github.com/krufyliu/dkvgo/protocol"
-	"github.com/krufyliu/dkvgo/task"
+	"github.com/krufyliu/dkvgo/job"
 )
 
 // ProtocolLoop define
@@ -84,12 +84,12 @@ func (loop *ProtocolLoop) execDirective(pack *protocol.Package) error {
 }
 
 func (loop *ProtocolLoop) handleTaskSubmit(pack *protocol.Package) error {
-	var taskSeg = new(task.TaskSegment)
-	if err := json.Unmarshal(pack.Payload, taskSeg); err != nil {
+	var task = new(job.Task)
+	if err := json.Unmarshal(pack.Payload, task); err != nil {
 		return err
 	}
 	loop.context.setSessionState(TaskSubmitAccepted)
-	loop.context.runTask(taskSeg)
+	loop.context.runTask(task)
 	var answer = protocol.NewPackage(protocol.TaskSumbitAccept)
 	return loop.sendPackage(answer)
 }

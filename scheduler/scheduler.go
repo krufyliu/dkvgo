@@ -3,7 +3,7 @@ package scheduler
 import (
 	"net"
 	"log"
-	"github.com/krufyliu/dkvgo/task"
+	"github.com/krufyliu/dkvgo/job"
 	"sync"
 	"time"
 )
@@ -15,13 +15,13 @@ type DkvScheduler struct {
 	tcpListener net.Listener
 	Store 		TaskStore
 	Pool        *WorkerPool
-	RunningTasks map[int]*task.Task
+	RunningTasks map[int]*job.Job
 }
 
 func (s *DkvScheduler) Main() {
 	tcpListener, err := net.Listen("tcp", s.opts.TCPAddr)
 	if err != nil {
-		log.Fatalf("FATAL: listen %s failed - %s", s.opts.TCPAddr， err)
+		log.Fatalf("FATAL: listen %s failed - %s", s.opts.TCPAddr, err)
 	}
 	s.tcpListener = tcpListener
 	s.runTcpServer()
@@ -37,7 +37,7 @@ func (s *DkvScheduler) schedTasks() {
 			time.Sleep(2*time.Second)
 			continue
 		}
-		t := s.Store.GetTask()
+		t := s.Store.GetJob()
 		if t == nil {
 			time.Sleep(5*time.Second)
 			continue
@@ -48,5 +48,5 @@ func (s *DkvScheduler) schedTasks() {
 func (s *DkvScheduler) runTcpServer() {
 	s.Add(1)
 	defer s.Done()
-	TCPServer(s.tcpListener, ProtocolLoop{ctx: s})
+	TCPServer(s.tcpListener, &ProtocolLoop{ctx: s})
 }

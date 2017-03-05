@@ -1,16 +1,16 @@
 package scheduler
 
 import (
-	"github.com/krufyliu/dkvgo/task"
+	"github.com/krufyliu/dkvgo/job"
 )
 
 type MockStore struct {
-	tk *task.Task
+	job *job.Job
 }
 
 func NewMockStore() *MockStore {
 	return &MockStore{
-		tk: & task.Task{
+		job: &job.Job{
 			ID:                1,
 			Name:              "test",
 			Priority:          128,
@@ -27,22 +27,22 @@ func NewMockStore() *MockStore {
 			EnableTop:         "1",
 			Quality:           "8k",
 			EanbleColorAdjust: "1",
-		}
+		},
 	}
 }
 
-func (store MockStore) GetTask() *task.Task {
-	return store.tk
+func (store MockStore) GetJob() *job.Job {
+	return store.job
 }
 
-func (store MockStore) UpdateTask(t *task.Task) bool {
+func (store MockStore) UpdateJob(j *job.Job) bool {
 	return true
 }
 
-func (store MockStore) SaveTaskState(t *task.Task) bool {
+func (store MockStore) SaveJobState(j *job.Job) bool {
 	return true
 }
 
-func (store MockStore) SaveTaskState(t *task.Task) bool {
+func (store MockStore) LoadJobState(j *job.Job) bool {
 	return true
 }

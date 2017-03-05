@@ -1,4 +1,4 @@
-package task
+package job
 
 // RunState describe a job state
 type RunState struct {

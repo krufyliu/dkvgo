@@ -11,7 +11,7 @@ import (
 
 	"io"
 
-	"github.com/krufyliu/dkvgo/task"
+	"github.com/krufyliu/dkvgo/job"
 )
 
 // ErrReachMaxRetryTime means can not connect
@@ -26,9 +26,9 @@ const (
 
 // Context define the context of DkvWorker
 type Context struct {
-	taskSeg      *task.TaskSegment
+	task      *job.Task
 	cmd          *exec.Cmd
-	state        *task.RunState
+	state        *job.RunState
 	sessionState int
 	joined       bool
 	sessionID    string
@@ -41,9 +41,9 @@ type DkvWorker struct {
 	context    *Context
 	retry      int
 	waitTime   int
-	// taskSeg    *task.TaskSegment
+	// task    *job.Task
 	// cmd        *exec.Cmd
-	// state      *task.RunState
+	// state      *job.RunState
 	// joined     bool
 	// sessionID  string
 }
@@ -121,9 +121,9 @@ func (w *DkvWorker) getSessionID() string {
 	return w.context.sessionID
 }
 
-func (w *DkvWorker) runTask(t *task.TaskSegment) {
-	w.context.taskSeg = t
-	w.context.cmd = task.NewCmdGeneratorFromTaskSegment(t, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting").GetCmd()
+func (w *DkvWorker) runTask(t *job.Task) {
+	w.context.task = t
+	w.context.cmd = job.NewCmdGeneratorFromTaskSegment(t, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting").GetCmd()
 	rd, wd, err := os.Pipe()
 	defer rd.Close()
 	defer wd.Close()
@@ -135,9 +135,9 @@ func (w *DkvWorker) runTask(t *task.TaskSegment) {
 	w.context.cmd.Stderr = os.Stderr
 	err = w.context.cmd.Run()
 	if err != nil {
-		log.Printf("task %d exited unexpected: %s\n", t.Task.ID, err)
+		log.Printf("task %d exited unexpected: %s\n", t.Job.ID, err)
 	} else {
-		log.Printf("task %d is done\n", t.Task.ID)
+		log.Printf("task %d is done\n", t.Job.ID)
 	}
 }
 

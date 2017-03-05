@@ -8,7 +8,7 @@ import (
 	"net"
 
 	"github.com/krufyliu/dkvgo/protocol"
-	"github.com/krufyliu/dkvgo/task"
+	"github.com/krufyliu/dkvgo/job"
 )
 
 var (
@@ -68,13 +68,13 @@ func (ioloop *IOLoop) Register() error {
 }
 
 func (ioloop *IOLoop) RunTask(req *protocol.DkvRequst) {
-	var taskSegment task.TaskSegment
-	if err := json.Unmarshal(req.Payload, &taskSegment); err != nil {
+	var task job.Task
+	if err := json.Unmarshal(req.Payload, &task); err != nil {
 		log.Fatalln(err)
 	}
 	ioloop.seedResponse(protocol.NewDkvResponse("OK"))
-	cmdgen := task.NewCmdGeneratorFromTaskSegment(&taskSegment, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting")
-	ioloop.context.taskSeg = &taskSegment
+	cmdgen := job.NewCmdGeneratorFromTaskSegment(&task, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting")
+	ioloop.context.task = &task
 	ioloop.context.cmd = cmdgen.GetCmd()
 }
 

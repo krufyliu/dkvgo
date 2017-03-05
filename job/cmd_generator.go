@@ -1,4 +1,4 @@
-package task
+package job
 
 import (
 	"fmt"
@@ -23,21 +23,21 @@ var BinMap = map[string]string{
 
 // CmdGenerator hold task options to generate exec.Cmd or shell command
 type CmdGenerator struct {
-	task             *Task
-	segOptions       *SegmentOptions
+	job             *Job
+	segOptions       *TaskOptions
 	threadNum        int
 	binDirecotry     string
 	settingDirectory string
 }
 
-// NewCmdGeneratorFromTaskSegment create CmdGenerator from TaskSegment instance
-func NewCmdGeneratorFromTaskSegment(taskSeg *TaskSegment, threadNum int, binDirectory string, settingDirectory string) *CmdGenerator {
+// NewCmdGeneratorFromTaskSegment create CmdGenerator from Task instance
+func NewCmdGeneratorFromTaskSegment(task *Task, threadNum int, binDirectory string, settingDirectory string) *CmdGenerator {
 	if threadNum <= 0 {
 		threadNum = runtime.NumCPU()
 	}
 	return &CmdGenerator{
-		task:             taskSeg.Task,
-		segOptions:       taskSeg.Options,
+		job:             task.Job,
+		segOptions:       task.Options,
 		threadNum:        threadNum,
 		binDirecotry:     binDirectory,
 		settingDirectory: settingDirectory,
@@ -45,27 +45,27 @@ func NewCmdGeneratorFromTaskSegment(taskSeg *TaskSegment, threadNum int, binDire
 }
 
 func (cg *CmdGenerator) getBinName() string {
-	return BinMap[cg.task.Algorithm]
+	return BinMap[cg.job.Algorithm]
 }
 
 func (cg *CmdGenerator) getSaveType() string {
-	if strings.ToUpper(cg.task.CameraType) == "BMPCC" {
+	if strings.ToUpper(cg.job.CameraType) == "BMPCC" {
 		return ".tiff"
 	}
 	return ".jpg"
 }
 
 func (cg *CmdGenerator) getFinalOuptutDir() string {
-	outputDir := cg.task.OutputDir
-	if strings.ToUpper(cg.task.Algorithm) == "TOP_BOTTOM" {
+	outputDir := cg.job.OutputDir
+	if strings.ToUpper(cg.job.Algorithm) == "TOP_BOTTOM" {
 		return outputDir
 	}
-	return path.Join(outputDir, cg.task.Algorithm)
+	return path.Join(outputDir, cg.job.Algorithm)
 }
 
 func (cg *CmdGenerator) getCameraSettingFileName() string {
-	cameraType := strings.ToLower(cg.task.CameraType)
-	algo := strings.ToLower(cg.task.Algorithm)
+	cameraType := strings.ToLower(cg.job.CameraType)
+	algo := strings.ToLower(cg.job.Algorithm)
 	if strings.ToUpper(algo) == "PREVIEW" {
 		return cameraType + "_camera_setting_facebook.xml"
 	}
@@ -74,7 +74,7 @@ func (cg *CmdGenerator) getCameraSettingFileName() string {
 }
 
 func (cg *CmdGenerator) getCmdOpts() map[string]string {
-	var videoDir = cg.task.VideoDir
+	var videoDir = cg.job.VideoDir
 	var startFrame = cg.segOptions.StartFrame
 	if cg.segOptions.FrameAt > cg.segOptions.StartFrame {
 		startFrame = cg.segOptions.FrameAt
@@ -87,8 +87,8 @@ func (cg *CmdGenerator) getCmdOpts() map[string]string {
 		"bottom_rectify_file": path.Join(videoDir, "bottom_rectify.xml"),
 		"mix_rectify_file":    path.Join(videoDir, "mix_rectify.xml"),
 		"camera_setting_file": path.Join(cg.settingDirectory, cg.getCameraSettingFileName()),
-		"enable_top":          cg.task.EnableTop,
-		"enable_bottom":       cg.task.EnableBottom,
+		"enable_top":          cg.job.EnableTop,
+		"enable_bottom":       cg.job.EnableBottom,
 		"start_frame":         strconv.Itoa(startFrame),
 		"end_frame":           strconv.Itoa(cg.segOptions.EndFrame),
 		"time_alignment_file": path.Join(videoDir, "time.txt"),

@@ -8,7 +8,7 @@ import (
 
 	"strconv"
 
-	"github.com/krufyliu/dkvgo/task"
+	"github.com/krufyliu/dkvgo/job"
 )
 
 var (
@@ -19,8 +19,8 @@ var (
 	totalTimeMatcher     = regexp.MustCompile(`Total time: ([\d]+\.[\d]+)`)
 )
 
-func matchState(reader *bufio.Reader) (*task.RunState, error) {
-	var state = new(task.RunState)
+func matchState(reader *bufio.Reader) (*job.RunState, error) {
+	var state = new(job.RunState)
 	var (
 		line                 string
 		err                  error

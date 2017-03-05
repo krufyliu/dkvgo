@@ -1,10 +1,10 @@
-package task
+package job
 
 // TaskSplitNum define split level
 const TaskSplitNum = 5
 
-// Task define video composition
-type Task struct {
+// Job define video composition
+type Job struct {
 	ID                int               `json:"id"`
 	Name              string            `json:"name"`
 	Priority          int               `json:"priority"`
@@ -21,12 +21,12 @@ type Task struct {
 	EnableTop         string            `json:"enable_top"`
 	Quality           string            `json:"quality"`
 	EanbleColorAdjust string            `json:"enable_coloradjust"`
-	SegOpts           []*SegmentOptions `json:"-"`
+	TaskOpts           []*TaskOptions `json:"-"`
 }
 
 // Map split t to N small piece
-func (t *Task) Map() {
-	if len(t.SegOpts) != 0 {
+func (t *Job) Map() {
+	if len(t.TaskOpts) != 0 {
 		return
 	}
 	var startFrame = t.StartFrame
@@ -34,7 +34,7 @@ func (t *Task) Map() {
 	var totalFrames = endFrame - startFrame + 1
 	var avgFrames = totalFrames / TaskSplitNum
 	for i := 0; i < TaskSplitNum; i++ {
-		var sOptions = new(SegmentOptions)
+		var sOptions = new(TaskOptions)
 		sOptions.StartFrame = startFrame + (i * avgFrames)
 		sOptions.FrameAt = sOptions.StartFrame
 		if i == TaskSplitNum-1 {
@@ -42,20 +42,20 @@ func (t *Task) Map() {
 		} else {
 			sOptions.EndFrame = sOptions.StartFrame + avgFrames - 1
 		}
-		t.SegOpts = append(t.SegOpts, sOptions)
+		t.TaskOpts = append(t.TaskOpts, sOptions)
 	}
 }
 
-// SegmentOptions describle video composition parameters
-type SegmentOptions struct {
+// TaskOptions describle video composition parameters
+type TaskOptions struct {
 	StartFrame int `json:"start_frame"`
 	EndFrame   int `json:"end_frame"`
 	FrameAt    int `json:"frame_at"`
 }
 
-// TaskSegment describle sub task
-type TaskSegment struct {
-	Task    *Task
-	Options *SegmentOptions
+// Task describle sub task
+type Task struct {
+	Job    *Job
+	Options *TaskOptions
 	Done    bool
 }

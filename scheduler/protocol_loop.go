@@ -23,7 +23,7 @@ func (loop *ProtocolLoop) Handle(conn net.Conn) {
 }
 
 func (loop *ProtocolLoop) identity() error {
-	deadline = time.Now() + 2*time.Second
+	var deadline = time.Now().Add(2*time.Second)
 	loop.clientConn.SetReadDeadline(deadline)
 	var pack = new(protocol.Package)
 	if err := pack.Unmarshal(loop.clientConn); err != nil {
@@ -32,7 +32,7 @@ func (loop *ProtocolLoop) identity() error {
 
 	hash := md5.New()
 	hash.Write([]byte(loop.clientConn.RemoteAddr().String()))
-	hash.Write(time.Now().String())
+	hash.Write([]byte(time.Now().String()))
 	pack = protocol.NewPackageWithPayload(protocol.JoinAccept, hash.Sum(nil))
 	message, err := pack.Marshal()
 	if err != nil {
