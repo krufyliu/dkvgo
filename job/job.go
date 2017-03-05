@@ -57,5 +57,4 @@ type TaskOptions struct {
 type Task struct {
 	Job    *Job
 	Options *TaskOptions
-	Done    bool
 }

@@ -3,43 +3,35 @@ package worker
 import (
 	"errors"
 	"net"
-
-	"io"
+	"log"
 
 	"bufio"
 
 	"encoding/json"
 
 	"github.com/krufyliu/dkvgo/protocol"
-	"github.com/krufyliu/dkvgo/job"
+	"time"
 )
 
 // ProtocolLoop define
 type ProtocolLoop struct {
-	context *DkvWorker
-	r       io.Reader
+	ctx *DkvWorker
+	reader      *bufio.Reader
 }
 
 // IOLoop implements ProtocolIO interface
-func (loop *ProtocolLoop) IOLoop(conn *net.TCPConn) error {
-	loop.context.connection = conn
-	return nil
-}
-
-func (loop *ProtocolLoop) reader() io.Reader {
-	if loop.r == nil {
-		loop.r = bufio.NewReader(loop.context.connection)
+func (loop *ProtocolLoop) IOLoop(conn net.Conn) error {
+	loop.ctx.connection = conn
+	loop.reader = bufio.NewReader(conn)
+	if err := loop.register(); err != nil {
+		return err
 	}
-	return loop.r
+	return  loop.runLoop()
 }
 
 func (loop *ProtocolLoop) register() error {
 	var pack *protocol.Package
-	if loop.context.getSessionID() == "" {
-		pack = protocol.NewPackage(protocol.Join)
-	} else {
-		pack = protocol.NewPackageWithPayload(protocol.Join, []byte(loop.context.getSessionID()))
-	}
+	pack = protocol.NewPackage(0x01)
 	if err := loop.sendPackage(pack); err != nil {
 		return err
 	}
@@ -47,65 +39,144 @@ func (loop *ProtocolLoop) register() error {
 	if err != nil {
 		return err
 	}
-	if answer.Directive != protocol.JoinAccept {
-		return errors.New("join failed")
+	if answer.Directive != 0x01 {
+		return errors.New("bad register response")
 	}
 	var sessionID = string(answer.Payload)
-	loop.context.setSessionID(sessionID)
+	loop.ctx.sessionID = sessionID
 	return nil
 }
 
 func (loop *ProtocolLoop) runLoop() error {
-	var pack *protocol.Package
-	var err error
+	// var pack *protocol.Package
+	// var err error
+	// for {
+	// 	pack, err = loop.receivePackage()
+	// 	if err != nil {
+	// 		break
+	// 	}
+	// 	err = loop.execDirective(pack)
+	// 	if err != nil {
+	// 		break
+	// 	}
+	// }
+	// return err
 	for {
-		pack, err = loop.receivePackage()
-		if err != nil {
-			break
+		if err := loop.makeOnePullRequest(); err != nil {
+			return nil
 		}
-		err = loop.execDirective(pack)
-		if err != nil {
-			break
-		}
+		time.Sleep(10)
 	}
-	return err
+	
 }
 
-func (loop *ProtocolLoop) execDirective(pack *protocol.Package) error {
-	switch pack.Directive {
-	case protocol.TaskSubmit:
-		return loop.handleTaskSubmit(pack)
-	case protocol.TaskStop:
-		return loop.handleTaskStop(pack)
-	default:
-		// should never reach here
-		return errors.New("bad directive")
+func (loop *ProtocolLoop) makeOnePullRequest() error {
+	for {
+		var reqpack = loop.newHeartBeatPack()
+		if err := loop.sendPackage(reqpack); err != nil {
+			if value, ok := err.(net.Error); ok && value.Timeout() {
+				time.Sleep(2)
+				continue
+			} else {
+				return err
+			}
+		}
+		break
+	}
+
+	for {
+		resPack, err := loop.receivePackage()
+		if err != nil {
+			if value, ok := err.(net.Error); ok && value.Timeout() {
+				time.Sleep(2)
+				continue
+			} else {
+				return err
+			}
+		}
+		return loop.handleResponsePack(resPack)
 	}
 }
 
-func (loop *ProtocolLoop) handleTaskSubmit(pack *protocol.Package) error {
-	var task = new(job.Task)
-	if err := json.Unmarshal(pack.Payload, task); err != nil {
+func (loop *ProtocolLoop) newHeartBeatPack() *protocol.Package {
+	heartMessage, _ := json.Marshal(loop.newHeartBeatBag())
+	var pack = protocol.NewPackageWithPayload(0x02, heartMessage)
+	return pack
+}
+
+func (loop *ProtocolLoop) newHeartBeatBag () *protocol.HeartBeatBag {
+	var heartb = new(protocol.HeartBeatBag)
+	var ctx = loop.ctx.ctx 
+	if ctx == nil {
+		heartb.Todo = "GETTASK"
+	} else if ctx.state != nil {
+		heartb.Todo = "REPORT"
+		heartb.Report = ctx.state
+	} else {
+		heartb.Todo = "PING"
+	}
+	return heartb
+}
+
+func (loop *ProtocolLoop) handleResponsePack(pack *protocol.Package) error {
+	if pack.WithPack != 1 && pack.Directive != 0x02 {
+		return errors.New("bad heartbeat response")
+	}
+	var heartb = new(protocol.HeartBeatBag)
+	if err := json.Unmarshal(pack.Payload, heartb); err != nil {
 		return err
 	}
-	loop.context.setSessionState(TaskSubmitAccepted)
-	loop.context.runTask(task)
-	var answer = protocol.NewPackage(protocol.TaskSumbitAccept)
-	return loop.sendPackage(answer)
-}
-
-func (loop *ProtocolLoop) handleTaskStop(pack *protocol.Package) error {
-	loop.context.setSessionState(TaskStopAccepted)
-	loop.context.stopTask()
+	switch heartb.Todo {
+	case "RUNTASK":
+		loop.ctx.runTask(heartb.Task)
+		loop.ctx.updatePing()
+    case "STOPTASK":
+		loop.ctx.stopTask()
+		loop.ctx.updatePing()
+	case "PING":
+		loop.ctx.updatePing()
+	default:
+		log.Printf("Error: Unkown heartbeat %s\n", heartb.Todo)	
+		return errors.New("bad heartbeat todo")
+	}
 	return nil
 }
+
+// func (loop *ProtocolLoop) execDirective(pack *protocol.Package) error {
+// 	switch pack.Directive {
+// 	case protocol.TaskSubmit:
+// 		return loop.handleTaskSubmit(pack)
+// 	case protocol.TaskStop:
+// 		return loop.handleTaskStop(pack)
+// 	default:
+// 		// should never reach here
+// 		return errors.New("bad directive")
+// 	}
+// }
+
+// func (loop *ProtocolLoop) handleTaskSubmit(pack *protocol.Package) error {
+// 	var task = new(job.Task)
+// 	if err := json.Unmarshal(pack.Payload, task); err != nil {
+// 		return err
+// 	}
+// 	loop.ctx.setSessionState(TaskSubmitAccepted)
+// 	loop.ctx.runTask(task)
+// 	var answer = protocol.NewPackage(protocol.TaskSumbitAccept)
+// 	return loop.sendPackage(answer)
+// }
+
+// func (loop *ProtocolLoop) handleTaskStop(pack *protocol.Package) error {
+// 	loop.ctx.setSessionState(TaskStopAccepted)
+// 	loop.ctx.stopTask()
+// 	return nil
+// }
 
 func (loop *ProtocolLoop) sendPackage(pack *protocol.Package) error {
 	message, err := pack.Marshal()
 	if err != nil {
 		return err
 	}
-	if _, err := loop.context.connection.Write(message); err != nil {
+	if _, err := loop.ctx.connection.Write(message); err != nil {
 		return err
 	}
 	return nil
@@ -113,7 +184,7 @@ func (loop *ProtocolLoop) sendPackage(pack *protocol.Package) error {
 
 func (loop *ProtocolLoop) receivePackage() (*protocol.Package, error) {
 	var pack = new(protocol.Package)
-	if err := pack.Unmarshal(loop.reader()); err != nil {
+	if err := pack.Unmarshal(loop.reader); err != nil {
 		return nil, err
 	}
 	return pack, nil

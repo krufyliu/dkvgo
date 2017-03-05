@@ -3,9 +3,8 @@ package scheduler
 import (
 	"net"
 	"log"
-	"github.com/krufyliu/dkvgo/job"
 	"sync"
-	"time"
+	"github.com/krufyliu/dkvgo/job"
 )
 
 // DkvScheduler d
@@ -13,8 +12,8 @@ type DkvScheduler struct {
 	sync.WaitGroup
 	opts        *Options
 	tcpListener net.Listener
+	httpListener net.Listener
 	Store 		TaskStore
-	Pool        *WorkerPool
 	RunningTasks map[int]*job.Job
 }
 
@@ -25,24 +24,7 @@ func (s *DkvScheduler) Main() {
 	}
 	s.tcpListener = tcpListener
 	s.runTcpServer()
-	s.schedTasks()
 	s.Wait()
-}
-
-func (s *DkvScheduler) schedTasks() {
-	s.Add(1)
-	defer s.Done()
-	for {
-		if !s.Pool.HasIdleWorker() {
-			time.Sleep(2*time.Second)
-			continue
-		}
-		t := s.Store.GetJob()
-		if t == nil {
-			time.Sleep(5*time.Second)
-			continue
-		}
-	}
 }
 
 func (s *DkvScheduler) runTcpServer() {

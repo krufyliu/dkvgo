@@ -1,8 +1,8 @@
 package job
 
 // RunState describe a job state
-type RunState struct {
-	Status               int
+type TaskState struct {
+	Status               string
 	FrameAt              int
 	PrepareImagesTime    float32
 	ComputeFlowTime      float32

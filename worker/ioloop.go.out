@@ -17,7 +17,7 @@ var (
 )
 
 type IOLoop struct {
-	context *DkvWorker
+	ctx *DkvWorker
 	reader  *bufio.Reader
 }
 
@@ -41,8 +41,8 @@ func (ioloop *IOLoop) IOLoop(conn *net.Conn) error {
 
 func (ioloop *IOLoop) Register() error {
 	var req *protocol.DkvRequst
-	if ioloop.context.sessionID != "" {
-		req = protocol.NewDkvRequest("REGISTER", []string{ioloop.context.sessionID})
+	if ioloop.ctx.sessionID != "" {
+		req = protocol.NewDkvRequest("REGISTER", []string{ioloop.ctx.sessionID})
 	} else {
 		req = protocol.NewDkvRequest("REGISTER", []string{})
 	}
@@ -74,15 +74,15 @@ func (ioloop *IOLoop) RunTask(req *protocol.DkvRequst) {
 	}
 	ioloop.seedResponse(protocol.NewDkvResponse("OK"))
 	cmdgen := job.NewCmdGeneratorFromTaskSegment(&task, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting")
-	ioloop.context.task = &task
-	ioloop.context.cmd = cmdgen.GetCmd()
+	ioloop.ctx.task = &task
+	ioloop.ctx.cmd = cmdgen.GetCmd()
 }
 
 func (ioloop *IOLoop) bufferReader() *bufio.Reader {
 	if ioloop.reader != nil {
 		return ioloop.reader
 	}
-	return bufio.NewReader(ioloop.context.connection)
+	return bufio.NewReader(ioloop.ctx.connection)
 }
 
 func (ioloop *IOLoop) expectResponse() (*protocol.DkvResponse, error) {
@@ -106,7 +106,7 @@ func (ioloop *IOLoop) seedResponse(res *protocol.DkvResponse) error {
 	if err != nil {
 		return err
 	}
-	_, err = ioloop.context.connection.Write(message)
+	_, err = ioloop.ctx.connection.Write(message)
 	return err
 }
 
@@ -115,6 +115,6 @@ func (ioloop *IOLoop) seedRequest(req *protocol.DkvRequst) error {
 	if err != nil {
 		return err
 	}
-	_, err = ioloop.context.connection.Write(message)
+	_, err = ioloop.ctx.connection.Write(message)
 	return err
 }

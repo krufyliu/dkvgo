@@ -19,8 +19,8 @@ var (
 	totalTimeMatcher     = regexp.MustCompile(`Total time: ([\d]+\.[\d]+)`)
 )
 
-func matchState(reader *bufio.Reader) (*job.RunState, error) {
-	var state = new(job.RunState)
+func matchState(reader *bufio.Reader) (*job.TaskState, error) {
+	var state = new(job.TaskState)
 	var (
 		line                 string
 		err                  error

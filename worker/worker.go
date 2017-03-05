@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net"
+	"time"
 	"os/exec"
 
 	"os"
@@ -19,33 +20,24 @@ var (
 	ErrReachMaxRetryTime = errors.New("reach max retry times")
 )
 
-const (
-	TaskSubmitAccepted = 1000
-	TaskStopAccepted   = 1001
-)
-
-// Context define the context of DkvWorker
+// Context define the ctx of DkvWorker
 type Context struct {
-	task      *job.Task
+	task      	 *job.Task
 	cmd          *exec.Cmd
-	state        *job.RunState
-	sessionState int
-	joined       bool
-	sessionID    string
+	state        *job.TaskState
+	forceStop    bool
 }
 
 // DkvWorker define worker struct
 type DkvWorker struct {
 	options    *Options
 	connection net.Conn
-	context    *Context
+	ctx    	   *Context
+	lastUpdate int64
 	retry      int
 	waitTime   int
-	// task    *job.Task
-	// cmd        *exec.Cmd
-	// state      *job.RunState
-	// joined     bool
-	// sessionID  string
+	joined     bool
+	sessionID  string
 }
 
 // NewDkvWorker create a new worker
@@ -53,7 +45,7 @@ func NewDkvWorker(opts *Options) *DkvWorker {
 	return &DkvWorker{
 		options:    opts,
 		connection: nil,
-		context:    new(Context),
+		ctx:    nil,
 		retry:      0,
 		waitTime:   1,
 	}
@@ -87,13 +79,23 @@ func (w *DkvWorker) closeConnection() error {
 	return w.connection.Close()
 }
 
-func (w *DkvWorker) setSessionState(state int) {
-	w.context.sessionState = state
+func (w *DkvWorker) clearCtx() {
+	w.ctx = nil
+}
+
+func (w *DkvWorker) updatePing() {
+	w.lastUpdate = time.Now().Unix()
+}
+
+
+func (w *DkvWorker) forceStopTask() {
+	w.ctx.forceStop = true
+	w.stopTask()
 }
 
 func (w *DkvWorker) stopTask() {
-	if w.context.cmd != nil && w.context.cmd.ProcessState != nil && !w.context.cmd.ProcessState.Exited() {
-		w.context.cmd.Process.Kill()
+	if w.ctx.cmd != nil && w.ctx.cmd.ProcessState != nil && !w.ctx.cmd.ProcessState.Exited() {
+		w.ctx.cmd.Process.Kill()
 	}
 }
 
@@ -110,20 +112,16 @@ func (w *DkvWorker) nextWaitTime() int {
 	return w.waitTime
 }
 
-func (w *DkvWorker) setSessionID(sessionID string) {
-	if w.context.sessionID != "" && w.context.sessionID != sessionID {
-		w.stopTask()
-		w.context.sessionID = sessionID
+func (w *DkvWorker) initCtx(t *job.Task) {
+	var ctx = &Context {
+		state: new(job.TaskState),
+		cmd: job.NewCmdGeneratorFromTaskSegment(t, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting").GetCmd(),
 	}
-}
-
-func (w *DkvWorker) getSessionID() string {
-	return w.context.sessionID
+	w.ctx = ctx
 }
 
 func (w *DkvWorker) runTask(t *job.Task) {
-	w.context.task = t
-	w.context.cmd = job.NewCmdGeneratorFromTaskSegment(t, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting").GetCmd()
+	w.initCtx(t)
 	rd, wd, err := os.Pipe()
 	defer rd.Close()
 	defer wd.Close()
@@ -131,14 +129,21 @@ func (w *DkvWorker) runTask(t *job.Task) {
 		log.Fatalln(err)
 	}
 	go w.collectTaskStatus(rd)
-	w.context.cmd.Stdout = wd
-	w.context.cmd.Stderr = os.Stderr
-	err = w.context.cmd.Run()
+	w.ctx.cmd.Stdout = wd
+	w.ctx.cmd.Stderr = os.Stderr
+	w.ctx.state.Status = "RUNNING"
+	err = w.ctx.cmd.Run()
+	w.ctx.state.Status = "Done"
 	if err != nil {
+		if w.ctx.forceStop {
+			w.ctx.state.Status = "STOPPED"
+		} else {
+			w.ctx.state.Status = "Failed"
+		}
 		log.Printf("task %d exited unexpected: %s\n", t.Job.ID, err)
-	} else {
-		log.Printf("task %d is done\n", t.Job.ID)
-	}
+	} 
+	log.Printf("task %d is done\n", t.Job.ID)
+	w.clearCtx()
 }
 
 func (w *DkvWorker) collectTaskStatus(r io.Reader) {
@@ -151,11 +156,13 @@ func (w *DkvWorker) collectTaskStatus(r io.Reader) {
 		if err == io.EOF {
 			break
 		}
-		w.context.state = state
+		state.Status = w.ctx.state.Status
+		w.ctx.state = state
 	}
 }
 
-// RunForever start a forerver goroutine
-func (w *DkvWorker) RunForever() {
+func (w *DkvWorker) Main() {
 	w.connect()
+	var pl = ProtocolLoop{ctx: w}
+	pl.IOLoop(w.connection)
 }
