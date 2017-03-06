@@ -72,7 +72,7 @@ func (opt *Options) fromCmdArgs(args []string) error {
 	return nil
 }
 
-func (opt *Options) tryFromCmdArgs(args []string) {
+func (opt *Options) TryFromCmdArgs(args []string) {
 	if err := opt.fromCmdArgs(args); err != nil {
 		os.Stderr.WriteString(err.Error() + "\n")
 		workerFlagSet.PrintDefaults()

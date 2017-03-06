@@ -1,5 +1,6 @@
 package scheduler
 
 type Options struct {
-	TCPAddr string
+	TCPAddr  string
+	HTTPAddr string
 }

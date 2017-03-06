@@ -7,7 +7,7 @@ import (
 )
 
 type TCPHandler interface {
-	Handle (net.Conn)
+	Handle(net.Conn)
 }
 
 func TCPServer(listener net.Listener, handler TCPHandler) {
@@ -22,6 +22,7 @@ func TCPServer(listener net.Listener, handler TCPHandler) {
 			log.Printf("ERROR: listener.Accept() - %s\n", err)
 			break
 		}
+		log.Printf("client from %s connected\n", clientConn.RemoteAddr().String())
 		go handler.Handle(clientConn)
 	}
 }

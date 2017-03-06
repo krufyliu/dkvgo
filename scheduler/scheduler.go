@@ -1,28 +1,53 @@
 package scheduler
 
 import (
-	"net"
 	"log"
+	"net"
 	"sync"
+
 	"github.com/krufyliu/dkvgo/job"
 )
 
 // DkvScheduler d
 type DkvScheduler struct {
 	sync.WaitGroup
-	opts        *Options
-	tcpListener net.Listener
+	mu           sync.Mutex
+	opts         *Options
+	tcpListener  net.Listener
 	httpListener net.Listener
-	Store 		TaskStore
-	RunningTasks map[int]*job.Job
+	TaskPool     *TaskPool
+	Store        TaskStore
+	runningJobs  map[int]*job.Job
+}
+
+func NewDkvScheduler(opts *Options) *DkvScheduler {
+	var sched = &DkvScheduler{
+		opts:  opts,
+		Store: &MockStore{},
+	}
+	sched.TaskPool = &TaskPool{ctx: sched}
+	return sched
+}
+
+func (s *DkvScheduler) AddRunningJob(_job *job.Job) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.runningJobs[_job.ID] = _job
+}
+
+func (s *DkvScheduler) RemoveRunningJob(_job *job.Job) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.runningJobs, _job.ID)
 }
 
 func (s *DkvScheduler) Main() {
 	tcpListener, err := net.Listen("tcp", s.opts.TCPAddr)
 	if err != nil {
-		log.Fatalf("FATAL: listen %s failed - %s", s.opts.TCPAddr, err)
+		log.Fatalf("FATAL: listen %s failed - %s\n", s.opts.TCPAddr, err)
 	}
 	s.tcpListener = tcpListener
+	log.Printf("TCP listen on %s\n", tcpListener.Addr().String())
 	s.runTcpServer()
 	s.Wait()
 }

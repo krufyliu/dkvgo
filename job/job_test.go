@@ -30,13 +30,13 @@ func Test_TaskToJson(t *testing.T) {
 	if err == nil {
 		t.Log(string(out))
 	}
-	job.Map()
+	job.split()
 	out, err = json.Marshal(job.TaskOpts)
 	if err == nil {
 		t.Log(string(out))
 	}
 	var seg = Task{
-		Job:    &job,
+		Job:     &job,
 		Options: job.TaskOpts[0],
 	}
 	out, err = json.Marshal(seg)
