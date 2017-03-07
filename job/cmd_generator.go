@@ -23,7 +23,7 @@ var BinMap = map[string]string{
 
 // CmdGenerator hold task options to generate exec.Cmd or shell command
 type CmdGenerator struct {
-	job             *Job
+	job              *Job
 	segOptions       *TaskOptions
 	threadNum        int
 	binDirecotry     string
@@ -36,7 +36,7 @@ func NewCmdGeneratorFromTaskSegment(task *Task, threadNum int, binDirectory stri
 		threadNum = runtime.NumCPU()
 	}
 	return &CmdGenerator{
-		job:             task.Job,
+		job:              task.Job,
 		segOptions:       task.Options,
 		threadNum:        threadNum,
 		binDirecotry:     binDirectory,
@@ -104,7 +104,7 @@ func (cg *CmdGenerator) GetCmd() *exec.Cmd {
 	return exec.Command(path.Join(cg.binDirecotry, cg.getBinName()), args...)
 }
 
-func (cg *CmdGenerator) getCmdLine() string {
+func (cg *CmdGenerator) GetCmdLine() string {
 	args := util.MapToCmdArgs(cg.getCmdOpts(), "-")
 	executable := path.Join(cg.binDirecotry, cg.getBinName())
 	return executable + " " + strings.Join(args, " ")

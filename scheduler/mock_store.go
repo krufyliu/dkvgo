@@ -15,9 +15,9 @@ func NewMockStore() *MockStore {
 			Name:              "test",
 			Priority:          128,
 			Progress:          88.5,
-			Status:            1,
+			Status:            0,
 			CreatedAt:         141241212312,
-			StartFrame:        1000,
+			StartFrame:        1200,
 			EndFrame:          2500,
 			CameraType:        "GOPRO",
 			Algorithm:         "FACEBOOK_3D",
@@ -31,8 +31,10 @@ func NewMockStore() *MockStore {
 	}
 }
 
-func (store MockStore) GetJob() *job.Job {
-	return store.job
+func (store *MockStore) GetJob() *job.Job {
+	var _job = store.job
+	store.job = nil
+	return _job
 }
 
 func (store MockStore) UpdateJob(j *job.Job) bool {

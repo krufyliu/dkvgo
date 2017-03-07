@@ -47,9 +47,11 @@ func (worker *Worker) IOLoop(conn net.Conn) {
 }
 
 func (worker *Worker) identity() error {
-	log.Printf("waiting for worker[%s] identity\n", worker.conn.RemoteAddr().String())
+	log.Printf("waiting for worker[%s] ident\n", worker.conn.RemoteAddr().String())
 	var deadline = time.Now().Add(2 * time.Second)
-	worker.conn.SetReadDeadline(deadline)
+	if err := worker.conn.SetReadDeadline(deadline); err != nil {
+		return err
+	}
 	var pack = new(protocol.Package)
 	if err := pack.Unmarshal(worker.reader); err != nil {
 		return err
@@ -64,6 +66,10 @@ func (worker *Worker) identity() error {
 	if err := worker.sendPackage(pack); err != nil {
 		return err
 	}
+	if err := worker.conn.SetReadDeadline(time.Time{}); err != nil {
+		return err
+	}
+	log.Printf("worker[%s] ident successfully\n", worker.conn.RemoteAddr().String())
 	return nil
 }
 
@@ -72,18 +78,22 @@ func (worker *Worker) runLoop() {
 		err := worker.makeOnePullResponse()
 		if err != nil {
 			if err == io.EOF {
-				worker.conn.Close()
-				if worker.relTask != nil {
-					worker.ctx.TaskPool.PushFront(worker.relTask)
-				}
-				break
+				log.Printf("%s disconnected\n", worker.conn.RemoteAddr())
+			} else {
+				log.Printf("Error: %s\n", err)
 			}
-			log.Printf("Error: %s\n", err)
+			worker.conn.Close()
+			if worker.relTask != nil {
+				log.Printf("push task %s back to task pool", worker.relTask)
+				worker.ctx.TaskPool.PushFront(worker.relTask)
+			}
+			break
 		}
 	}
 }
 
 func (worker *Worker) makeOnePullResponse() error {
+	log.Printf("%s waiting for pull request...\n", worker.conn.RemoteAddr())
 	pack, err := worker.receivePackage()
 	if err != nil {
 		return err
@@ -101,6 +111,7 @@ func (worker *Worker) handleHeartBeatRequest(pack *protocol.Package) error {
 	if err != nil {
 		return nil
 	}
+	log.Printf("%s receive heartbeat package with todo %s\n", worker.conn.RemoteAddr(), bag.Todo)
 	switch bag.Todo {
 	case "GETTASK":
 		return worker.handleGETTASK(bag)
@@ -109,9 +120,8 @@ func (worker *Worker) handleHeartBeatRequest(pack *protocol.Package) error {
 	case "PING":
 		return worker.handlePING(bag)
 	default:
-		return errors.New("bad request heartbeat todo")
+		return errors.New("bad request heartbeat todo " + bag.Todo)
 	}
-
 }
 
 func (worker *Worker) handleGETTASK(bag *protocol.HeartBeatBag) error {
@@ -119,8 +129,10 @@ func (worker *Worker) handleGETTASK(bag *protocol.HeartBeatBag) error {
 	var pack *protocol.Package
 	var err error
 	if task == nil {
+		log.Printf("%s get no task\n", worker.conn.RemoteAddr())
 		pack, err = worker.makePingPack()
 	} else {
+		log.Printf("%s get task %s\n", worker.conn.RemoteAddr(), task)
 		worker.Attach(task)
 		pack, err = worker.makeRunTaskPack(task)
 	}
@@ -151,6 +163,7 @@ func (worker *Worker) handleREPORT(bag *protocol.HeartBeatBag) error {
 }
 
 func (worker *Worker) dealWithStatus(state *job.TaskState) {
+	log.Printf("%s %s report: %s\n", worker.conn.RemoteAddr(), worker.relTask, state)
 	switch state.Status {
 	case "DONE":
 		if worker.relTask.Job.TaskDone() {
@@ -158,6 +171,7 @@ func (worker *Worker) dealWithStatus(state *job.TaskState) {
 				worker.ctx.Store.UpdateJob(worker.relTask.Job)
 			}
 		}
+		worker.relTask.Job.DecRunning()
 		worker.Dettach()
 	case "STOPPED":
 		if worker.relTask.Job.DecRunning() == 0 {
@@ -165,6 +179,7 @@ func (worker *Worker) dealWithStatus(state *job.TaskState) {
 				worker.ctx.Store.UpdateJob(worker.relTask.Job)
 			}
 		}
+		worker.relTask.Job.DecRunning()
 		worker.Dettach()
 	case "FAILED":
 		if worker.relTask.Job.CompareStatusAndSwap(0x06, 0x02, 0x01) {
@@ -173,9 +188,12 @@ func (worker *Worker) dealWithStatus(state *job.TaskState) {
 		worker.relTask.Job.DecRunning()
 		worker.Dettach()
 	default:
+		if worker.relTask.Job.CompareStatusAndSwap(0x02, 0x01) {
+			worker.ctx.Store.UpdateJob(worker.relTask.Job)
+		}
 		var oldState = worker.relTask.GetState()
 		if oldState.FrameAt < state.FrameAt {
-			worker.relTask.Job.IncFinishFrames(state.FrameAt - oldState.FrameAt)
+			worker.relTask.Job.IncFinishFrames(state.FrameAt - oldState.FrameAt + 1)
 			worker.relTask.UpdateState(state)
 		}
 	}

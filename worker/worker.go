@@ -2,7 +2,6 @@ package worker
 
 import (
 	"bufio"
-	"errors"
 	"log"
 	"net"
 	"os/exec"
@@ -13,11 +12,6 @@ import (
 	"io"
 
 	"github.com/krufyliu/dkvgo/job"
-)
-
-// ErrReachMaxRetryTime means can not connect
-var (
-	ErrReachMaxRetryTime = errors.New("reach max retry times")
 )
 
 // Context define the ctx of DkvWorker
@@ -47,13 +41,14 @@ func NewDkvWorker(opts *Options) *DkvWorker {
 		connection: nil,
 		ctx:        nil,
 		retry:      0,
-		waitTime:   1,
+		waitTime:   5,
 	}
 }
 
 func (w *DkvWorker) connect() error {
 	conn, err := net.Dial("tcp", w.options.schedulerAddr)
 	if err != nil {
+		log.Printf("Error: %s\n", err)
 		return err
 	}
 	w.retry = 0
@@ -62,14 +57,29 @@ func (w *DkvWorker) connect() error {
 	return nil
 }
 
-func (w *DkvWorker) reconnect() error {
+func (w *DkvWorker) tryToConnect() {
 	for {
-		if w.retry > w.options.maxRetryWaitTime {
-			log.Fatal(ErrReachMaxRetryTime)
+		if err := w.connect(); err != nil {
+			w.retry++
+		} else {
 			break
 		}
+		if w.options.maxRetry != 0 && w.retry > w.options.maxRetry {
+			log.Fatalf("Error: reach max retry connect times: %d\n", w.options.maxRetry)
+		}
+		var sleepTime = w.nextWaitTime()
+		log.Printf("after %ds to reconnect, reconnect times: %d\n", sleepTime, w.retry-1)
+		time.Sleep(time.Duration(sleepTime) * time.Second)
 	}
-	return nil
+}
+
+func (w *DkvWorker) nextWaitTime() int {
+	var waitTime = w.waitTime
+	w.waitTime += 5
+	if w.waitTime > w.options.maxRetryWaitTime {
+		w.waitTime = 1
+	}
+	return waitTime
 }
 
 func (w *DkvWorker) closeConnection() error {
@@ -93,8 +103,10 @@ func (w *DkvWorker) forceStopTask() {
 }
 
 func (w *DkvWorker) stopTask() {
-	if w.ctx.cmd != nil && w.ctx.cmd.ProcessState != nil && !w.ctx.cmd.ProcessState.Exited() {
+	if w.ctx != nil && w.ctx.cmd != nil && w.ctx.cmd.ProcessState != nil && !w.ctx.cmd.ProcessState.Exited() {
+		log.Printf("stop task %s...\n", w.ctx.task)
 		w.ctx.cmd.Process.Kill()
+		log.Printf("task stopped\n")
 	}
 }
 
@@ -103,18 +115,12 @@ func (w *DkvWorker) stop() {
 	w.stopTask()
 }
 
-func (w *DkvWorker) nextWaitTime() int {
-	w.waitTime += 5
-	if w.waitTime > w.options.maxRetryWaitTime {
-		w.waitTime = 1
-	}
-	return w.waitTime
-}
-
 func (w *DkvWorker) initCtx(t *job.Task) {
+	var cg = job.NewCmdGeneratorFromTaskSegment(t, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting")
+	log.Println(cg.GetCmdLine())
 	var ctx = &Context{
-		state: new(job.TaskState),
-		cmd:   job.NewCmdGeneratorFromTaskSegment(t, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting").GetCmd(),
+		state: &job.TaskState{FrameAt: t.Options.FrameAt},
+		cmd:   cg.GetCmd(),
 	}
 	w.ctx = ctx
 }
@@ -131,6 +137,7 @@ func (w *DkvWorker) runTask(t *job.Task) {
 	w.ctx.cmd.Stdout = wd
 	w.ctx.cmd.Stderr = os.Stderr
 	w.ctx.state.Status = "RUNNING"
+	log.Printf("run shell task %s\n", w.ctx.cmd.Path)
 	err = w.ctx.cmd.Run()
 	w.ctx.state.Status = "DONE"
 	if err != nil {
@@ -139,19 +146,22 @@ func (w *DkvWorker) runTask(t *job.Task) {
 		} else {
 			w.ctx.state.Status = "FAILED"
 		}
-		log.Printf("task %d exited unexpected: %s\n", t.Job.ID, err)
+		log.Printf("task[%d], frames from %d to %d exited unexpected: %s\n", t.Job.ID, t.Options.StartFrame, t.Options.EndFrame, err)
+	} else {
+		log.Printf("task[%d], frames from %d to %d is done\n", t.Job.ID, t.Options.StartFrame, t.Options.EndFrame)
 	}
-	log.Printf("task %d is done\n", t.Job.ID)
-	w.clearCtx()
 }
 
 func (w *DkvWorker) collectTaskStatus(r io.Reader) {
+	log.Printf("collect stdout\n")
 	reader := bufio.NewReader(r)
 	for {
 		state, err := matchState(reader)
 		if err != nil && err != io.EOF {
+			log.Fatalf("Error: %s\n", err)
 			return
 		}
+		log.Println(state, err)
 		if err == io.EOF {
 			break
 		}
@@ -161,7 +171,12 @@ func (w *DkvWorker) collectTaskStatus(r io.Reader) {
 }
 
 func (w *DkvWorker) Main() {
-	w.connect()
-	var pl = ProtocolLoop{ctx: w}
-	pl.IOLoop(w.connection)
+	for {
+		w.tryToConnect()
+		var pl = ProtocolLoop{ctx: w}
+		if err := pl.IOLoop(w.connection); err != nil {
+			log.Printf("Error: %s\n", err)
+			w.stop()
+		}
+	}
 }

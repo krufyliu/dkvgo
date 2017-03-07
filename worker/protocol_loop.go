@@ -2,21 +2,22 @@ package worker
 
 import (
 	"errors"
-	"net"
 	"log"
+	"net"
 
 	"bufio"
 
 	"encoding/json"
 
-	"github.com/krufyliu/dkvgo/protocol"
 	"time"
+
+	"github.com/krufyliu/dkvgo/protocol"
 )
 
 // ProtocolLoop define
 type ProtocolLoop struct {
-	ctx *DkvWorker
-	reader      *bufio.Reader
+	ctx    *DkvWorker
+	reader *bufio.Reader
 }
 
 // IOLoop implements ProtocolIO interface
@@ -26,7 +27,7 @@ func (loop *ProtocolLoop) IOLoop(conn net.Conn) error {
 	if err := loop.register(); err != nil {
 		return err
 	}
-	return  loop.runLoop()
+	return loop.runLoop()
 }
 
 func (loop *ProtocolLoop) register() error {
@@ -44,6 +45,7 @@ func (loop *ProtocolLoop) register() error {
 	}
 	var sessionID = string(answer.Payload)
 	loop.ctx.sessionID = sessionID
+	log.Printf("register successfully, session: %x\n", sessionID)
 	return nil
 }
 
@@ -63,11 +65,11 @@ func (loop *ProtocolLoop) runLoop() error {
 	// return err
 	for {
 		if err := loop.makeOnePullRequest(); err != nil {
-			return nil
+			return err
 		}
-		time.Sleep(10)
+		time.Sleep(10 * time.Second)
 	}
-	
+
 }
 
 func (loop *ProtocolLoop) makeOnePullRequest() error {
@@ -104,16 +106,22 @@ func (loop *ProtocolLoop) newHeartBeatPack() *protocol.Package {
 	return pack
 }
 
-func (loop *ProtocolLoop) newHeartBeatBag () *protocol.HeartBeatBag {
+func (loop *ProtocolLoop) newHeartBeatBag() *protocol.HeartBeatBag {
 	var heartb = new(protocol.HeartBeatBag)
-	var ctx = loop.ctx.ctx 
+	var ctx = loop.ctx.ctx
 	if ctx == nil {
 		heartb.Todo = "GETTASK"
+		log.Printf("make heartbeat with todo %s\n", heartb.Todo)
 	} else if ctx.state != nil {
 		heartb.Todo = "REPORT"
 		heartb.Report = ctx.state
+		if ctx.state.Status != "RUNNING" {
+			loop.ctx.clearCtx()
+		}
+		log.Printf("make heartbeat with todo %s: %s\n", heartb.Todo, heartb.Report)
 	} else {
 		heartb.Todo = "PING"
+		log.Printf("make heartbeat with todo %s\n", heartb.Todo)
 	}
 	return heartb
 }
@@ -126,17 +134,19 @@ func (loop *ProtocolLoop) handleResponsePack(pack *protocol.Package) error {
 	if err := json.Unmarshal(pack.Payload, heartb); err != nil {
 		return err
 	}
+	log.Printf("receive heartbeat with todo %s\n", heartb.Todo)
 	switch heartb.Todo {
 	case "RUNTASK":
-		loop.ctx.runTask(heartb.Task)
+		log.Printf("get task %s\n", heartb.Task)
+		go loop.ctx.runTask(heartb.Task)
 		loop.ctx.updatePing()
-    case "STOPTASK":
-		loop.ctx.stopTask()
+	case "STOPTASK":
+		loop.ctx.forceStopTask()
 		loop.ctx.updatePing()
 	case "PING":
 		loop.ctx.updatePing()
 	default:
-		log.Printf("Error: Unkown heartbeat %s\n", heartb.Todo)	
+		log.Printf("Error: Unkown heartbeat %s\n", heartb.Todo)
 		return errors.New("bad heartbeat todo")
 	}
 	return nil

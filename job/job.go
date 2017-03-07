@@ -1,6 +1,7 @@
 package job
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -135,6 +136,10 @@ type Task struct {
 	Job     *Job
 	Options *TaskOptions
 	state   *TaskState
+}
+
+func (task Task) String() string {
+	return fmt.Sprintf("job[%d](%d-%d:%d)", task.Job.ID, task.Options.StartFrame, task.Options.EndFrame, task.Options.FrameAt)
 }
 
 func (task *Task) UpdateState(state *TaskState) {

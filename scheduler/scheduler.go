@@ -23,9 +23,9 @@ type DkvScheduler struct {
 func NewDkvScheduler(opts *Options) *DkvScheduler {
 	var sched = &DkvScheduler{
 		opts:  opts,
-		Store: &MockStore{},
+		Store: NewMockStore(),
 	}
-	sched.TaskPool = &TaskPool{ctx: sched}
+	sched.TaskPool = NewTaskPool(sched)
 	return sched
 }
 
