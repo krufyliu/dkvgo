@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/krufyliu/dkvgo/job"
+	"github.com/krufyliu/dkvgo/scheduler/store"
 )
 
 // DkvScheduler d
@@ -16,14 +17,14 @@ type DkvScheduler struct {
 	tcpListener  net.Listener
 	httpListener net.Listener
 	TaskPool     *TaskPool
-	Store        TaskStore
+	Store        store.JobStore
 	runningJobs  map[int]*job.Job
 }
 
 func NewDkvScheduler(opts *Options) *DkvScheduler {
 	var sched = &DkvScheduler{
 		opts:  opts,
-		Store: NewMockStore(),
+		Store: store.NewMockStore(),
 	}
 	sched.TaskPool = NewTaskPool(sched)
 	return sched

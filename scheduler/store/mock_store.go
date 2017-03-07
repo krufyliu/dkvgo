@@ -1,4 +1,4 @@
-package scheduler
+package store
 
 import (
 	"github.com/krufyliu/dkvgo/job"

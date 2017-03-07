@@ -16,7 +16,6 @@ type Job struct {
 	Priority          int            `json:"priority"`
 	Progress          float32        `json:"progress"`
 	Status            int            `json:"status"` //0: Queuing, 1: Accepted, 2: Running, 3:stopping, 4:stopped, 5: completed, 6: Failed, 7:Canceled
-	CreatedAt         int            `json:"created_at"`
 	StartFrame        int            `json:"start_frame"`
 	EndFrame          int            `json:"end_frame"`
 	CameraType        string         `json:"camera_type"`
