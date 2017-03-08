@@ -178,7 +178,7 @@ func (worker *Worker) dealWithStatus(state *job.TaskState) {
 			worker.relTask.Job,
 			worker.relTask.Job.TotalFrames(),
 			worker.relTask.Job.GetFinishFrames(),
-			worker.relTask.Job.CalcProgress()*100.0)
+			worker.relTask.Job.CalcProgress())
 	}
 
 	switch state.Status {

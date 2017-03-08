@@ -131,7 +131,7 @@ func (t *Job) GetFinishFrames() int {
 }
 
 func (t *Job) CalcProgress() float32 {
-	return float32(t.finishFrames) / float32(t.EndFrame-t.StartFrame+1)
+	return float32(t.finishFrames) * 100.0 / float32(t.EndFrame-t.StartFrame+1)
 }
 
 func (t *Job) HasCompleted() bool {

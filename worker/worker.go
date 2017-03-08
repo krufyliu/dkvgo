@@ -77,7 +77,7 @@ func (w *DkvWorker) nextWaitTime() int {
 	var waitTime = w.waitTime
 	w.waitTime += 5
 	if w.waitTime > w.options.maxRetryWaitTime {
-		w.waitTime = 1
+		w.waitTime = 5
 	}
 	return waitTime
 }

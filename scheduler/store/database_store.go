@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 
@@ -28,6 +29,11 @@ func (ds *DatabaseStore) init() {
 		panic(err)
 	}
 	ds.db = db
+	//
+	_, err = ds.db.Exec("update jobs set status='0' where status='1' or status='2'")
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (ds *DatabaseStore) GetJob() *job.Job {
@@ -57,8 +63,8 @@ func (ds *DatabaseStore) GetJob() *job.Job {
 }
 
 func (ds *DatabaseStore) UpdateJob(_job *job.Job) bool {
-	_, err := ds.db.Exec("update jobs set status=?, progress=? where id=?",
-		_job.Status, _job.Progress, _job.ID)
+	_, err := ds.db.Exec("update jobs set status=?, progress=?, update_at=? where id=?",
+		_job.Status, _job.CalcProgress(), time.Now().Unix(), _job.ID)
 	if err != nil {
 		panic(err)
 	}
