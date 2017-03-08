@@ -6,7 +6,7 @@ import (
 )
 
 // TaskSplitNum define split level
-const TaskSplitNum = 5
+const TaskSplitNum = 8
 
 // Job define video composition
 type Job struct {
@@ -41,11 +41,16 @@ func (t *Job) split() {
 	var endFrame = t.EndFrame
 	var totalFrames = endFrame - startFrame + 1
 	var avgFrames = totalFrames / TaskSplitNum
-	for i := 0; i < TaskSplitNum; i++ {
+	var splitNum = TaskSplitNum
+	if avgFrames < 2 {
+		splitNum = totalFrames / 2
+		avgFrames = 2
+	}
+	for i := 0; i < splitNum; i++ {
 		var sOptions = new(TaskOptions)
 		sOptions.StartFrame = startFrame + (i * avgFrames)
 		sOptions.FrameAt = sOptions.StartFrame
-		if i == TaskSplitNum-1 {
+		if i == splitNum-1 {
 			sOptions.EndFrame = endFrame
 		} else {
 			sOptions.EndFrame = sOptions.StartFrame + avgFrames - 1
@@ -59,7 +64,7 @@ func (t *Job) Init() {
 	for _, opt := range t.TaskOpts {
 		if opt.FrameAt == opt.EndFrame {
 			t.numOfCompleteTask++
-			t.finishFrames += opt.EndFrame - opt.FrameAt + 1
+			t.finishFrames += opt.FrameAt - opt.StartFrame
 		}
 	}
 }
@@ -68,6 +73,10 @@ func (t *Job) GetStatus() int {
 	t.Lock()
 	defer t.Unlock()
 	return t.Status
+}
+
+func (t *Job) TotalFrames() int {
+	return t.EndFrame - t.StartFrame + 1
 }
 
 func (t *Job) CompareStatusAndSwap(newStatus int, oldStatus ...int) bool {
@@ -117,10 +126,22 @@ func (t *Job) IncFinishFrames(count int) int {
 	return t.finishFrames
 }
 
+func (t *Job) GetFinishFrames() int {
+	return t.finishFrames
+}
+
+func (t *Job) CalcProgress() float32 {
+	return float32(t.finishFrames) / float32(t.EndFrame-t.StartFrame+1)
+}
+
 func (t *Job) HasCompleted() bool {
 	t.Lock()
 	defer t.Unlock()
 	return len(t.TaskOpts) != 0 && len(t.TaskOpts) == t.numOfCompleteTask
+}
+
+func (t *Job) String() string {
+	return fmt.Sprintf("Job-%d(%d-%d)", t.ID, t.StartFrame, t.EndFrame)
 }
 
 // TaskOptions describle video composition parameters
@@ -135,6 +156,10 @@ type Task struct {
 	Job     *Job
 	Options *TaskOptions
 	state   *TaskState
+}
+
+func (task Task) Finished() bool {
+	return task.Options.FrameAt == task.Options.EndFrame+1
 }
 
 func (task Task) String() string {

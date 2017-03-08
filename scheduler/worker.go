@@ -144,26 +144,43 @@ func (worker *Worker) handleGETTASK(bag *protocol.HeartBeatBag) error {
 
 func (worker *Worker) handleREPORT(bag *protocol.HeartBeatBag) error {
 	var report = bag.Report
-	worker.relTask.UpdateState(report)
+	worker.dealWithStatus(report)
 	// has flag to stop work
 	var pack *protocol.Package
 	var err error
-	var status = worker.relTask.Job.GetStatus()
 	// when stopping task or task fail, stop other relative task
-	if status == 0x03 || status == 0x06 {
-		pack, err = worker.makeStopTaskPack()
+	if worker.relTask != nil {
+		var status = worker.relTask.Job.GetStatus()
+		if status == 0x03 || status == 0x06 {
+			pack, err = worker.makeStopTaskPack()
+		} else {
+			pack, err = worker.makePingPack()
+		}
 	} else {
 		pack, err = worker.makePingPack()
 	}
 	if err != nil {
 		return err
 	}
-	worker.dealWithStatus(report)
 	return worker.sendPackage(pack)
 }
 
 func (worker *Worker) dealWithStatus(state *job.TaskState) {
 	log.Printf("%s %s report: %s\n", worker.conn.RemoteAddr(), worker.relTask, state)
+	var oldState = worker.relTask.GetState()
+	if oldState == nil {
+		worker.relTask.UpdateState(state)
+	} else if oldState.FrameAt < state.FrameAt {
+		worker.relTask.Job.IncFinishFrames(state.FrameAt - oldState.FrameAt)
+		worker.relTask.UpdateState(state)
+		worker.ctx.Store.SaveJobState(worker.relTask.Job)
+		log.Printf("%s progress: %d/%d/%.2f%%\n",
+			worker.relTask.Job,
+			worker.relTask.Job.TotalFrames(),
+			worker.relTask.Job.GetFinishFrames(),
+			worker.relTask.Job.CalcProgress()*100.0)
+	}
+
 	switch state.Status {
 	case "DONE":
 		if worker.relTask.Job.TaskDone() {
@@ -179,7 +196,6 @@ func (worker *Worker) dealWithStatus(state *job.TaskState) {
 				worker.ctx.Store.UpdateJob(worker.relTask.Job)
 			}
 		}
-		worker.relTask.Job.DecRunning()
 		worker.Dettach()
 	case "FAILED":
 		if worker.relTask.Job.CompareStatusAndSwap(0x06, 0x02, 0x01) {
@@ -190,11 +206,6 @@ func (worker *Worker) dealWithStatus(state *job.TaskState) {
 	default:
 		if worker.relTask.Job.CompareStatusAndSwap(0x02, 0x01) {
 			worker.ctx.Store.UpdateJob(worker.relTask.Job)
-		}
-		var oldState = worker.relTask.GetState()
-		if oldState.FrameAt < state.FrameAt {
-			worker.relTask.Job.IncFinishFrames(state.FrameAt - oldState.FrameAt + 1)
-			worker.relTask.UpdateState(state)
 		}
 	}
 }

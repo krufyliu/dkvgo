@@ -2,16 +2,18 @@ package store
 
 import (
 	"database/sql"
+
 	_ "github.com/go-sql-driver/mysql"
 
-	"github.com/krufyliu/dkvgo/job"
 	"encoding/json"
+
+	"github.com/krufyliu/dkvgo/job"
 )
 
 type DatabaseStore struct {
 	dbType string
 	dbAddr string
-	db *sql.DB
+	db     *sql.DB
 }
 
 func NewDatabaseStore(dbType string, addr string) *DatabaseStore {
@@ -42,10 +44,10 @@ func (ds *DatabaseStore) GetJob() *job.Job {
 	var _job = job.Job{}
 	var row = ds.db.QueryRow(query)
 	err := row.Scan(&_job.ID, &_job.Name, &_job.Priority, &_job.Progress, &_job.Status,
-					&_job.StartFrame, &_job.EndFrame, &_job.CameraType, &_job.Algorithm,
-					&_job.VideoDir, &_job.OutputDir, &_job.EnableTop, &_job.EnableBottom,
-					&_job.Quality, &_job.EanbleColorAdjust)
-    if err != nil {
+		&_job.StartFrame, &_job.EndFrame, &_job.CameraType, &_job.Algorithm,
+		&_job.VideoDir, &_job.OutputDir, &_job.EnableTop, &_job.EnableBottom,
+		&_job.Quality, &_job.EanbleColorAdjust)
+	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil
 		}
@@ -56,8 +58,8 @@ func (ds *DatabaseStore) GetJob() *job.Job {
 
 func (ds *DatabaseStore) UpdateJob(_job *job.Job) bool {
 	_, err := ds.db.Exec("update jobs set status=?, progress=? where id=?",
-				 _job.Status, _job.Progress, _job.ID)
-    if err != nil {
+		_job.Status, _job.Progress, _job.ID)
+	if err != nil {
 		panic(err)
 	}
 	return true
@@ -102,6 +104,9 @@ func (ds *DatabaseStore) LoadJobState(_job *job.Job) bool {
 	var taskOpts []*job.TaskOptions
 	if err := json.Unmarshal(content, taskOpts); err != nil {
 		panic(err)
+	}
+	if len(taskOpts) == 0 {
+		return false
 	}
 	_job.TaskOpts = taskOpts
 	return true

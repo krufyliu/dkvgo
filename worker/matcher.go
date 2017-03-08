@@ -51,7 +51,7 @@ func matchState(reader *bufio.Reader) (*job.TaskState, error) {
 			break
 		}
 	}
-	state.FrameAt = frameAt
+	state.FrameAt = frameAt + 1
 	state.PrepareImagesTime = float32(prepareImagesTime)
 	state.ComputeFlowTime = float32(computeFlowTime)
 	state.ComputeNovelViewTime = float32(computeNovelViewTime)

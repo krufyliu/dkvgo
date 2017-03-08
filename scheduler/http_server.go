@@ -12,6 +12,5 @@ func stopJob(w http.ResponseWriter, r *http.Request) {
 
 }
 
-http.Handle("/api/jobs", getJobDetail)
-http.Handle("/api/job/action/stop", stopJob)
-
+// http.HandleFunc("/api/jobs", getJobDetail)
+// http.HandleFunc("/api/job/action/stop", stopJob)

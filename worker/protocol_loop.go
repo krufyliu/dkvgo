@@ -45,6 +45,7 @@ func (loop *ProtocolLoop) register() error {
 	}
 	var sessionID = string(answer.Payload)
 	loop.ctx.sessionID = sessionID
+	loop.ctx.joined = true
 	log.Printf("register successfully, session: %x\n", sessionID)
 	return nil
 }

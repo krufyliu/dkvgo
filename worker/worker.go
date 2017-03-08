@@ -52,7 +52,7 @@ func (w *DkvWorker) connect() error {
 		return err
 	}
 	w.retry = 0
-	w.waitTime = 1
+	w.waitTime = 5
 	w.connection = conn
 	return nil
 }
@@ -86,6 +86,7 @@ func (w *DkvWorker) closeConnection() error {
 	if w.connection == nil {
 		return nil
 	}
+	w.joined = false
 	return w.connection.Close()
 }
 
@@ -103,8 +104,8 @@ func (w *DkvWorker) forceStopTask() {
 }
 
 func (w *DkvWorker) stopTask() {
-	if w.ctx != nil && w.ctx.cmd != nil && w.ctx.cmd.ProcessState != nil && !w.ctx.cmd.ProcessState.Exited() {
-		log.Printf("stop task %s...\n", w.ctx.task)
+	if w.ctx != nil && w.ctx.cmd != nil && w.ctx.cmd.Process != nil {
+		log.Printf("stop task ...\n")
 		w.ctx.cmd.Process.Kill()
 		log.Printf("task stopped\n")
 	}
@@ -113,11 +114,11 @@ func (w *DkvWorker) stopTask() {
 func (w *DkvWorker) stop() {
 	w.closeConnection()
 	w.stopTask()
+	w.clearCtx()
 }
 
 func (w *DkvWorker) initCtx(t *job.Task) {
 	var cg = job.NewCmdGeneratorFromTaskSegment(t, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting")
-	log.Println(cg.GetCmdLine())
 	var ctx = &Context{
 		state: &job.TaskState{FrameAt: t.Options.FrameAt},
 		cmd:   cg.GetCmd(),
@@ -137,23 +138,27 @@ func (w *DkvWorker) runTask(t *job.Task) {
 	w.ctx.cmd.Stdout = wd
 	w.ctx.cmd.Stderr = os.Stderr
 	w.ctx.state.Status = "RUNNING"
-	log.Printf("run shell task %s\n", w.ctx.cmd.Path)
+	log.Printf("run shell task %+v\n", w.ctx.cmd.Args)
 	err = w.ctx.cmd.Run()
-	w.ctx.state.Status = "DONE"
+	if !w.joined {
+		return
+	}
+	//try to make full collection
+	time.Sleep(1 * time.Second)
 	if err != nil {
 		if w.ctx.forceStop {
 			w.ctx.state.Status = "STOPPED"
 		} else {
 			w.ctx.state.Status = "FAILED"
 		}
-		log.Printf("task[%d], frames from %d to %d exited unexpected: %s\n", t.Job.ID, t.Options.StartFrame, t.Options.EndFrame, err)
+		log.Printf("%s exited unexpected: %s\n", t, err)
 	} else {
-		log.Printf("task[%d], frames from %d to %d is done\n", t.Job.ID, t.Options.StartFrame, t.Options.EndFrame)
+		w.ctx.state.Status = "DONE"
+		log.Printf("%s is done\n", t)
 	}
 }
 
 func (w *DkvWorker) collectTaskStatus(r io.Reader) {
-	log.Printf("collect stdout\n")
 	reader := bufio.NewReader(r)
 	for {
 		state, err := matchState(reader)
@@ -161,7 +166,6 @@ func (w *DkvWorker) collectTaskStatus(r io.Reader) {
 			log.Fatalf("Error: %s\n", err)
 			return
 		}
-		log.Println(state, err)
 		if err == io.EOF {
 			break
 		}
@@ -175,7 +179,7 @@ func (w *DkvWorker) Main() {
 		w.tryToConnect()
 		var pl = ProtocolLoop{ctx: w}
 		if err := pl.IOLoop(w.connection); err != nil {
-			log.Printf("Error: %s\n", err)
+			log.Printf("Error: %s------------------\n", err)
 			w.stop()
 		}
 	}
