@@ -139,8 +139,9 @@ func (w *DkvWorker) runTask(t *job.Task) {
 	w.ctx.cmd.Stderr = os.Stderr
 	w.ctx.state.Status = "RUNNING"
 	log.Printf("run shell task %+v\n", w.ctx.cmd.Args)
+	var currentSession = w.sessionID
 	err = w.ctx.cmd.Run()
-	if !w.joined {
+	if currentSession != w.sessionID {
 		return
 	}
 	//try to make full collection

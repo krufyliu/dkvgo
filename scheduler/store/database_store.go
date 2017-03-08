@@ -73,14 +73,15 @@ func (ds *DatabaseStore) UpdateJob(_job *job.Job) bool {
 
 func (ds *DatabaseStore) SaveJobState(_job *job.Job) bool {
 	var taskOpts = _job.TaskOpts
-	if len(taskOpts) != 0 {
+	if len(taskOpts) == 0 {
 		return true
 	}
 	content, err := json.Marshal(taskOpts)
 	if err != nil {
 		panic(err)
 	}
-	result, err := ds.db.Exec("update job_states set content=? where job_id=?", content, _job.ID)
+	var updateSql = "update job_states set content=?, update_at=? where job_id=?"
+	result, err := ds.db.Exec(updateSql, content, time.Now().Unix(), _job.ID)
 	if err != nil {
 		panic(err)
 	}
@@ -88,8 +89,9 @@ func (ds *DatabaseStore) SaveJobState(_job *job.Job) bool {
 	if err != nil {
 		panic(err)
 	}
+	var insertSql = `insert into job_states(job_id, content, create_at, update_at) values(?, ?, ?, ?)`
 	if count == 0 {
-		_, err = ds.db.Exec("insert into job_states(job_id, content) values(?, ?)", _job.ID, string(content))
+		_, err = ds.db.Exec(insertSql, _job.ID, content, time.Now().Unix(), time.Now().Unix())
 		if err != nil {
 			panic(err)
 		}
@@ -108,7 +110,7 @@ func (ds *DatabaseStore) LoadJobState(_job *job.Job) bool {
 		panic(err)
 	}
 	var taskOpts []*job.TaskOptions
-	if err := json.Unmarshal(content, taskOpts); err != nil {
+	if err := json.Unmarshal(content, &taskOpts); err != nil {
 		panic(err)
 	}
 	if len(taskOpts) == 0 {
