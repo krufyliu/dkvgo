@@ -2,50 +2,36 @@ package worker
 
 import (
 	"bufio"
-	"errors"
 	"log"
 	"net"
 	"os/exec"
+	"time"
 
 	"os"
 
 	"io"
 
-	"github.com/krufyliu/dkvgo/task"
+	"github.com/krufyliu/dkvgo/job"
 )
 
-// ErrReachMaxRetryTime means can not connect
-var (
-	ErrReachMaxRetryTime = errors.New("reach max retry times")
-)
-
-const (
-	TaskSubmitAccepted = 1000
-	TaskStopAccepted   = 1001
-)
-
-// Context define the context of DkvWorker
+// Context define the ctx of DkvWorker
 type Context struct {
-	taskSeg      *task.TaskSegment
-	cmd          *exec.Cmd
-	state        *task.RunState
-	sessionState int
-	joined       bool
-	sessionID    string
+	task      *job.Task
+	cmd       *exec.Cmd
+	state     *job.TaskState
+	forceStop bool
 }
 
 // DkvWorker define worker struct
 type DkvWorker struct {
 	options    *Options
-	connection *net.TCPConn
-	context    *Context
+	connection net.Conn
+	ctx        *Context
+	lastUpdate int64
 	retry      int
 	waitTime   int
-	// taskSeg    *task.TaskSegment
-	// cmd        *exec.Cmd
-	// state      *task.RunState
-	// joined     bool
-	// sessionID  string
+	joined     bool
+	sessionID  string
 }
 
 // NewDkvWorker create a new worker
@@ -53,77 +39,95 @@ func NewDkvWorker(opts *Options) *DkvWorker {
 	return &DkvWorker{
 		options:    opts,
 		connection: nil,
-		context:    new(Context),
+		ctx:        nil,
 		retry:      0,
-		waitTime:   1,
+		waitTime:   5,
 	}
 }
 
 func (w *DkvWorker) connect() error {
-	conn, err := net.DialTCP("tcp", nil, w.options.schedulerAddr)
+	conn, err := net.Dial("tcp", w.options.schedulerAddr)
 	if err != nil {
+		log.Printf("Error: %s\n", err)
 		return err
 	}
 	w.retry = 0
-	w.waitTime = 1
+	w.waitTime = 5
 	w.connection = conn
 	return nil
 }
 
-func (w *DkvWorker) reconnect() error {
+func (w *DkvWorker) tryToConnect() {
 	for {
-		if w.retry > w.options.maxRetryWaitTime {
-			log.Fatal(ErrReachMaxRetryTime)
+		if err := w.connect(); err != nil {
+			w.retry++
+		} else {
 			break
 		}
+		if w.options.maxRetry != 0 && w.retry > w.options.maxRetry {
+			log.Fatalf("Error: reach max retry connect times: %d\n", w.options.maxRetry)
+		}
+		var sleepTime = w.nextWaitTime()
+		log.Printf("after %ds to reconnect, reconnect times: %d\n", sleepTime, w.retry-1)
+		time.Sleep(time.Duration(sleepTime) * time.Second)
 	}
-	return nil
+}
+
+func (w *DkvWorker) nextWaitTime() int {
+	var waitTime = w.waitTime
+	w.waitTime += 5
+	if w.waitTime > w.options.maxRetryWaitTime {
+		w.waitTime = 1
+	}
+	return waitTime
 }
 
 func (w *DkvWorker) closeConnection() error {
 	if w.connection == nil {
 		return nil
 	}
+	w.joined = false
 	return w.connection.Close()
 }
 
-func (w *DkvWorker) setSessionState(state int) {
-	w.context.sessionState = state
+func (w *DkvWorker) clearCtx() {
+	w.ctx = nil
+}
+
+func (w *DkvWorker) updatePing() {
+	w.lastUpdate = time.Now().Unix()
+}
+
+func (w *DkvWorker) forceStopTask() {
+	w.ctx.forceStop = true
+	w.stopTask()
 }
 
 func (w *DkvWorker) stopTask() {
-	if w.context.cmd != nil && w.context.cmd.ProcessState != nil && !w.context.cmd.ProcessState.Exited() {
-		w.context.cmd.Process.Kill()
+	if w.ctx != nil && w.ctx.cmd != nil && w.ctx.cmd.Process != nil {
+		log.Printf("stop task ...\n")
+		w.ctx.cmd.Process.Kill()
+		log.Printf("task stopped\n")
 	}
 }
 
 func (w *DkvWorker) stop() {
 	w.closeConnection()
 	w.stopTask()
+	w.clearCtx()
 }
 
-func (w *DkvWorker) nextWaitTime() int {
-	w.waitTime += 5
-	if w.waitTime > w.options.maxRetryWaitTime {
-		w.waitTime = 1
+func (w *DkvWorker) initCtx(t *job.Task) {
+	var cg = job.NewCmdGeneratorFromTaskSegment(t, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting")
+	var ctx = &Context{
+		state: &job.TaskState{FrameAt: t.Options.FrameAt},
+		cmd:   cg.GetCmd(),
 	}
-	return w.waitTime
+	w.ctx = ctx
 }
 
-func (w *DkvWorker) setSessionID(sessionID string) {
-	if w.context.sessionID != "" && w.context.sessionID != sessionID {
-		w.stopTask()
-		w.context.sessionID = sessionID
-	}
-}
-
-func (w *DkvWorker) getSessionID() string {
-	return w.context.sessionID
-}
-
-func (w *DkvWorker) runTask(t *task.TaskSegment) {
-	w.context.taskSeg = t
-	w.context.cmd = task.NewCmdGeneratorFromTaskSegment(t, 8, "/usr/local/visiondk/bin", "/usr/local/visiondk/setting").GetCmd()
+func (w *DkvWorker) runTask(t *job.Task) {
+	w.initCtx(t)
 	rd, wd, err := os.Pipe()
 	defer rd.Close()
 	defer wd.Close()
@@ -131,13 +135,26 @@ func (w *DkvWorker) runTask(t *task.TaskSegment) {
 		log.Fatalln(err)
 	}
 	go w.collectTaskStatus(rd)
-	w.context.cmd.Stdout = wd
-	w.context.cmd.Stderr = os.Stderr
-	err = w.context.cmd.Run()
+	w.ctx.cmd.Stdout = wd
+	w.ctx.cmd.Stderr = os.Stderr
+	w.ctx.state.Status = "RUNNING"
+	log.Printf("run shell task %+v\n", w.ctx.cmd.Args)
+	err = w.ctx.cmd.Run()
+	if !w.joined {
+		return
+	}
+	//try to make full collection
+	time.Sleep(1 * time.Second)
 	if err != nil {
-		log.Printf("task %d exited unexpected: %s\n", t.Task.ID, err)
+		if w.ctx.forceStop {
+			w.ctx.state.Status = "STOPPED"
+		} else {
+			w.ctx.state.Status = "FAILED"
+		}
+		log.Printf("%s exited unexpected: %s\n", t, err)
 	} else {
-		log.Printf("task %d is done\n", t.Task.ID)
+		w.ctx.state.Status = "DONE"
+		log.Printf("%s is done\n", t)
 	}
 }
 
@@ -146,16 +163,24 @@ func (w *DkvWorker) collectTaskStatus(r io.Reader) {
 	for {
 		state, err := matchState(reader)
 		if err != nil && err != io.EOF {
+			log.Fatalf("Error: %s\n", err)
 			return
 		}
 		if err == io.EOF {
 			break
 		}
-		w.context.state = state
+		state.Status = w.ctx.state.Status
+		w.ctx.state = state
 	}
 }
 
-// RunForever start a forerver goroutine
-func (w *DkvWorker) RunForever() {
-	w.connect()
+func (w *DkvWorker) Main() {
+	for {
+		w.tryToConnect()
+		var pl = ProtocolLoop{ctx: w}
+		if err := pl.IOLoop(w.connection); err != nil {
+			log.Printf("Error: %s------------------\n", err)
+			w.stop()
+		}
+	}
 }

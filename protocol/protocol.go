@@ -6,6 +6,7 @@ import (
 	"io"
 )
 
+// Package define binary protocol
 type Package struct {
 	Version   byte
 	Directive int32

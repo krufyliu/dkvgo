@@ -10,11 +10,11 @@ import (
 )
 
 // DefaultSchedulerPort present default scheduler port
-const DefaultSchedulerPort = 7654
+const DefaultSchedulerPort = 9876
 
 // Options define worker runtime option
 type Options struct {
-	schedulerAddr    *net.TCPAddr
+	schedulerAddr    string
 	maxRetry         int
 	maxRetryWaitTime int
 }
@@ -31,7 +31,7 @@ var schedulerAddHelp = "Schduler tcp addr, non empty, eg 127.0.0.1:8765. Defualt
 var maxRetryHelp = "Max retry times when lost connection."
 var maxRetryWaitTimeHelp = "Max wait time before next connection."
 
-var errAddrEmpty = errors.New("scheduler tcp addr")
+var errAddrEmpty = errors.New("scheduler tcp addr is empty")
 var errBadAddr = errors.New("bad scheduler tcp addr")
 
 var workerFlagSet = flag.NewFlagSet("worker", flag.ContinueOnError)
@@ -66,13 +66,13 @@ func (opt *Options) fromCmdArgs(args []string) error {
 		return errBadAddr
 	}
 
-	opt.schedulerAddr = tcpAddr
+	opt.schedulerAddr = schedulerAddr
 	opt.maxRetry = maxRetry
 	opt.maxRetryWaitTime = maxRetryWaitTime
 	return nil
 }
 
-func (opt *Options) tryFromCmdArgs(args []string) {
+func (opt *Options) TryFromCmdArgs(args []string) {
 	if err := opt.fromCmdArgs(args); err != nil {
 		os.Stderr.WriteString(err.Error() + "\n")
 		workerFlagSet.PrintDefaults()
