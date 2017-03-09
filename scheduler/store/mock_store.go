@@ -30,6 +30,7 @@ func NewMockStore() *MockStore {
 			EnableBottom:      "1",
 			EnableTop:         "1",
 			Quality:           "8k",
+			SaveDebugImg:      "true",
 			EanbleColorAdjust: "1",
 		},
 	}

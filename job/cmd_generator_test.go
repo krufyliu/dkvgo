@@ -22,6 +22,7 @@ func Test_CmdG(t *testing.T) {
 		EnableTop:         "1",
 		Quality:           "8k",
 		EanbleColorAdjust: "1",
+		SaveDebugImg:      "true",
 	}
 	var seg = Task{
 		Job: &job,

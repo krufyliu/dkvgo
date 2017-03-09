@@ -22,6 +22,7 @@ func Test_TaskToJson(t *testing.T) {
 		EnableBottom:      "1",
 		EnableTop:         "1",
 		Quality:           "8k",
+		SaveDebugImg:      "true",
 		EanbleColorAdjust: "1",
 	}
 	var out []byte

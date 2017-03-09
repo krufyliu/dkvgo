@@ -82,6 +82,7 @@ func (cg *CmdGenerator) getCmdOpts() map[string]string {
 	var opts = map[string]string{
 		"video_dir":           videoDir,
 		"output_dir":          cg.getFinalOuptutDir(),
+		"time_alignment_file": path.Join(videoDir, "time.txt"),
 		"ring_rectify_file":   path.Join(videoDir, "ring_rectify.xml"),
 		"top_rectify_file":    path.Join(videoDir, "top_rectify.xml"),
 		"bottom_rectify_file": path.Join(videoDir, "bottom_rectify.xml"),
@@ -89,9 +90,9 @@ func (cg *CmdGenerator) getCmdOpts() map[string]string {
 		"camera_setting_file": path.Join(cg.settingDirectory, cg.getCameraSettingFileName()),
 		"enable_top":          cg.job.EnableTop,
 		"enable_bottom":       cg.job.EnableBottom,
+		"save_debug_img":      cg.job.SaveDebugImg,
 		"start_frame":         strconv.Itoa(startFrame),
 		"end_frame":           strconv.Itoa(cg.segOptions.EndFrame),
-		"time_alignment_file": path.Join(videoDir, "time.txt"),
 		"save_type":           cg.getSaveType(),
 		"thread_num":          strconv.Itoa(cg.threadNum),
 	}

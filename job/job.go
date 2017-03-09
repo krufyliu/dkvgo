@@ -1,8 +1,8 @@
 package job
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"sync"
 )
 
@@ -26,6 +26,7 @@ type Job struct {
 	EnableBottom      string         `json:"enable_bottom"`
 	EnableTop         string         `json:"enable_top"`
 	Quality           string         `json:"quality"`
+	SaveDebugImg      string         `json:"save_debug_img"`
 	EanbleColorAdjust string         `json:"enable_coloradjust"`
 	TaskOpts          []*TaskOptions `json:"-"`
 	numOfCompleteTask int
@@ -63,7 +64,7 @@ func (t *Job) split() {
 func (t *Job) Init() {
 	t.split()
 	for _, opt := range t.TaskOpts {
-		if opt.FrameAt == opt.EndFrame + 1 {
+		if opt.FrameAt == opt.EndFrame+1 {
 			t.numOfCompleteTask++
 		}
 		t.finishFrames += opt.FrameAt - opt.StartFrame
