@@ -1,6 +1,7 @@
 package job
 
 import (
+	"log"
 	"fmt"
 	"sync"
 )
@@ -62,11 +63,12 @@ func (t *Job) split() {
 func (t *Job) Init() {
 	t.split()
 	for _, opt := range t.TaskOpts {
-		if opt.FrameAt == opt.EndFrame {
+		if opt.FrameAt == opt.EndFrame + 1 {
 			t.numOfCompleteTask++
-			t.finishFrames += opt.FrameAt - opt.StartFrame
 		}
+		t.finishFrames += opt.FrameAt - opt.StartFrame
 	}
+	log.Printf("init: %s", t)
 }
 
 func (t *Job) GetStatus() int {
@@ -131,7 +133,7 @@ func (t *Job) GetFinishFrames() int {
 }
 
 func (t *Job) CalcProgress() float32 {
-	return float32(t.finishFrames) / float32(t.EndFrame-t.StartFrame+1)
+	return float32(t.finishFrames) * 100.0 / float32(t.EndFrame-t.StartFrame+1)
 }
 
 func (t *Job) HasCompleted() bool {

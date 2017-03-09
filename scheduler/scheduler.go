@@ -23,8 +23,9 @@ type DkvScheduler struct {
 
 func NewDkvScheduler(opts *Options) *DkvScheduler {
 	var sched = &DkvScheduler{
-		opts:  opts,
-		Store: store.NewMockStore(),
+		opts: opts,
+		//Store: store.NewMockStore(),
+		Store: store.NewDatabaseStore("mysql", "root:mysql1234@/dkvgo?charset=utf8"),
 	}
 	sched.TaskPool = NewTaskPool(sched)
 	return sched
