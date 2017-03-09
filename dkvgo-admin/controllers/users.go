@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"github.com/astaxie/beego"
+	"github.com/krufyliu/dkvgo/dkvgo-admin/utils"
 )
 
 type LoginController struct {
@@ -21,5 +22,4 @@ func (this LoginController) Post() {
 		this.ServeJSON()
 		return
 	}
-
 }

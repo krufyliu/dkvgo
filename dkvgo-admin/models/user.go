@@ -14,6 +14,7 @@ type User struct {
 	Jobs     []*Job    `orm:"reverse(many)"`
 }
 
-func UserLogin(email, password string) *User, error {
+func UserLogin(email, password string)  {
 	var md5Password = utils.Md5(password)
+
 }
