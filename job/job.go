@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 )
 
 // TaskSplitNum define split level
 const TaskSplitNum = 8
 
-// Job define video composition
+// Job define the basic information for running
 type Job struct {
 	sync.Mutex
 	ID                int            `json:"id"`
@@ -29,6 +30,7 @@ type Job struct {
 	SaveDebugImg      string         `json:"save_debug_img"`
 	EanbleColorAdjust string         `json:"enable_coloradjust"`
 	TaskOpts          []*TaskOptions `json:"-"`
+	LastRecord        time.Time      `json:"-"`
 	numOfCompleteTask int
 	finishFrames      int
 	numOfTaskRunning  int

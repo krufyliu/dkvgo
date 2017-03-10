@@ -4,10 +4,13 @@ import (
 	"log"
 	"sync"
 
+	"time"
+
 	"github.com/krufyliu/dkvgo/job"
 	"github.com/krufyliu/dkvgo/job/store"
 )
 
+// JobTracker trace job's lifecycle
 var JobTracker jobTracker
 
 type jobTracker struct {
@@ -29,6 +32,7 @@ func (tr *jobTracker) trace() {
 		task := tc.task
 		_job := task.Job
 		if tr.jobMapping[_job.ID] == nil {
+			log.Printf("begin tracking %s", _job)
 			tr.jobMapping[_job.ID] = make(map[*job.Task]string)
 		}
 		tr.jobMapping[_job.ID][task] = tc.runAddr
@@ -46,7 +50,12 @@ func (tr *jobTracker) handleState(task *job.Task, state *job.TaskState) {
 	} else if oldState.FrameAt < state.FrameAt {
 		_job.IncFinishFrames(state.FrameAt - oldState.FrameAt)
 		task.UpdateState(state)
-		tr.store.SaveJobState(_job)
+		if time.Since(_job.LastRecord) >= 30*time.Second {
+			log.Printf("recording %s, current progress:%.2f", _job, _job.CalcProgress())
+			tr.store.UpdateJob(_job)
+			tr.store.SaveJobState(_job)
+			_job.LastRecord = time.Now()
+		}
 		log.Printf("%s progress: %d/%d/%.2f%%\n",
 			_job,
 			_job.TotalFrames(),
@@ -82,6 +91,9 @@ func (tr *jobTracker) handleState(task *job.Task, state *job.TaskState) {
 			tr.store.UpdateJob(_job)
 		}
 	}
+	if state.Status != "RUNNING" {
+		tr.store.SaveJobState(_job)
+	}
 }
 
 func (tr *jobTracker) TraceWorker(w *Worker) {
@@ -96,10 +108,12 @@ func (tr *jobTracker) TraceWorkerWithState(w *Worker, state *job.TaskState) {
 
 func (tr *jobTracker) endTraceJob(_job *job.Job) {
 	delete(tr.jobMapping, _job.ID)
+	log.Printf("end tracking %s", _job)
 }
 
+// InitJobTracker must be called before it is used
 func InitJobTracker(store store.JobStore) {
-	log.Printf("")
+	log.Printf("init job tracker")
 	JobTracker = jobTracker{jobMapping: make(map[int]map[*job.Task]string), traceChannel: make(chan *taskSnapShot, 8), store: store}
 	go JobTracker.trace()
 }

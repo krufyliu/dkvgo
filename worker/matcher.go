@@ -12,11 +12,11 @@ import (
 )
 
 var (
-	frameMatcher         = regexp.MustCompile(`Process frame: ([\d]+)`)
-	prepareTimeMatcher   = regexp.MustCompile(`Prepare images time: ([\d]+\.[\d]+)`)
-	flowTimeMatcher      = regexp.MustCompile(`Compute flow time: ([\d]+\.[\d]+)`)
-	novelViewTimeMatcher = regexp.MustCompile(`Compute novel view time: ([\d]+\.[\d]+)`)
-	totalTimeMatcher     = regexp.MustCompile(`Total time: ([\d]+\.[\d]+)`)
+	frameMatcher         = regexp.MustCompile(`Process frame:[\s]*([\d]+)`)
+	prepareTimeMatcher   = regexp.MustCompile(`Prepare images time:[\s]*([\d]+\.[\d]+)`)
+	flowTimeMatcher      = regexp.MustCompile(`Compute flow time:[\s]*([\d]+\.[\d]+)`)
+	novelViewTimeMatcher = regexp.MustCompile(`Compute novel view time:[\s]*([\d]+\.[\d]+)`)
+	totalTimeMatcher     = regexp.MustCompile(`Total time:[\s]*([\d]+\.[\d]+)`)
 )
 
 func matchState(reader *bufio.Reader) (*job.TaskState, error) {

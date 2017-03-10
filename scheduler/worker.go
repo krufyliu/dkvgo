@@ -101,7 +101,6 @@ func (worker *Worker) runLoop() {
 }
 
 func (worker *Worker) makeOnePullResponse() error {
-	log.Printf("%s waiting for pull request...\n", worker.conn.RemoteAddr())
 	pack, err := worker.receivePackage()
 	if err != nil {
 		return err
