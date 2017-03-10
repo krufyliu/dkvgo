@@ -11,7 +11,8 @@ import (
 	"github.com/krufyliu/dkvgo/job"
 )
 
-const TimeLayout = "2016-01-02 15:04:05"
+// TimeLayout define database datetime format
+const TimeLayout = "2006-01-02 15:04:05"
 
 type DatabaseStore struct {
 	dbType string

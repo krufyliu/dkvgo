@@ -87,6 +87,7 @@ func (w *DkvWorker) closeConnection() error {
 		return nil
 	}
 	w.joined = false
+	w.sessionID = ""
 	return w.connection.Close()
 }
 

@@ -10,5 +10,6 @@ func main() {
 		HTTPAddr: "127.0.0.1:9875",
 	}
 	var sched = scheduler.NewDkvScheduler(opts)
+	scheduler.InitJobTracker(sched.Store)
 	sched.Main()
 }

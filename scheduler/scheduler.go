@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/krufyliu/dkvgo/job"
-	"github.com/krufyliu/dkvgo/scheduler/store"
+	"github.com/krufyliu/dkvgo/job/store"
 )
 
 // DkvScheduler d

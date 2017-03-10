@@ -24,8 +24,16 @@ type Worker struct {
 	relTask    *job.Task
 }
 
+func (worker *Worker) RemoteAddr() string {
+	if worker.conn == nil {
+		return ""
+	}
+	return worker.conn.RemoteAddr().String()
+}
+
 func (worker *Worker) Attach(ts *job.Task) {
 	worker.relTask = ts
+	JobTracker.TraceWorker(worker)
 }
 
 func (worker *Worker) Dettach() *job.Task {
@@ -166,47 +174,10 @@ func (worker *Worker) handleREPORT(bag *protocol.HeartBeatBag) error {
 }
 
 func (worker *Worker) dealWithStatus(state *job.TaskState) {
-	log.Printf("%s %s report: %s\n", worker.conn.RemoteAddr(), worker.relTask, state)
-	var oldState = worker.relTask.GetState()
-	if oldState == nil {
-		worker.relTask.UpdateState(state)
-	} else if oldState.FrameAt < state.FrameAt {
-		worker.relTask.Job.IncFinishFrames(state.FrameAt - oldState.FrameAt)
-		worker.relTask.UpdateState(state)
-		worker.ctx.Store.SaveJobState(worker.relTask.Job)
-		log.Printf("%s progress: %d/%d/%.2f%%\n",
-			worker.relTask.Job,
-			worker.relTask.Job.TotalFrames(),
-			worker.relTask.Job.GetFinishFrames(),
-			worker.relTask.Job.CalcProgress())
-	}
-
-	switch state.Status {
-	case "DONE":
-		if worker.relTask.Job.TaskDone() {
-			if worker.relTask.Job.CompareStatusAndSwap(0x05, 0x02) {
-				worker.ctx.Store.UpdateJob(worker.relTask.Job)
-			}
-		}
-		worker.relTask.Job.DecRunning()
+	log.Printf("%s %s report: %s\n", worker.RemoteAddr(), worker.relTask, state)
+	JobTracker.TraceWorkerWithState(worker, state)
+	if state.Status != "RUNNING" {
 		worker.Dettach()
-	case "STOPPED":
-		if worker.relTask.Job.DecRunning() == 0 {
-			if worker.relTask.Job.CompareStatusAndSwap(0x04, 0x03) {
-				worker.ctx.Store.UpdateJob(worker.relTask.Job)
-			}
-		}
-		worker.Dettach()
-	case "FAILED":
-		if worker.relTask.Job.CompareStatusAndSwap(0x06, 0x02, 0x01) {
-			worker.ctx.Store.UpdateJob(worker.relTask.Job)
-		}
-		worker.relTask.Job.DecRunning()
-		worker.Dettach()
-	default:
-		if worker.relTask.Job.CompareStatusAndSwap(0x02, 0x01) {
-			worker.ctx.Store.UpdateJob(worker.relTask.Job)
-		}
 	}
 }
 
