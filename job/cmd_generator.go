@@ -13,12 +13,8 @@ import (
 
 // BinMap define composition algorithm to executable
 var BinMap = map[string]string{
-	"VISIONDK_3D": "test_3d_visiondk",
-	"VISIONDK_2D": "test_2d_visiondk",
-	"FACEBOOK_3D": "test_3d_facebook",
-	"FACEBOOK_2D": "test_2d_facebook",
-	"PREVIEW":     "test_preview",
-	"TOP_BOTTOM":  "test_top_and_bottom",
+	"3D_AURA":  "test_3d_aura",
+	"3D_GOPRO": "test_3d_gopro",
 }
 
 // CmdGenerator hold task options to generate exec.Cmd or shell command
@@ -57,20 +53,25 @@ func (cg *CmdGenerator) getSaveType() string {
 
 func (cg *CmdGenerator) getFinalOuptutDir() string {
 	outputDir := cg.job.OutputDir
-	if strings.ToUpper(cg.job.Algorithm) == "TOP_BOTTOM" {
-		return outputDir
-	}
+	// if strings.ToUpper(cg.job.Algorithm) == "TOP_BOTTOM" {
+	// 	return outputDir
+	// }
 	return path.Join(outputDir, cg.job.Algorithm)
 }
 
 func (cg *CmdGenerator) getCameraSettingFileName() string {
 	cameraType := strings.ToLower(cg.job.CameraType)
-	algo := strings.ToLower(cg.job.Algorithm)
-	if strings.ToUpper(algo) == "PREVIEW" {
-		return cameraType + "_camera_setting_facebook.xml"
-	}
-	algoBase := strings.Split(algo, "_")[0]
-	return fmt.Sprintf("%s_camera_setting_%s.xml", cameraType, algoBase)
+	// algo := strings.ToLower(cg.job.Algorithm)
+	// if strings.ToUpper(algo) == "PREVIEW" {
+	// 	return cameraType + "_camera_setting_facebook.xml"
+	// }
+	// algoBase := strings.Split(algo, "_")[0]
+	return fmt.Sprintf("%s/%s/camera_setting_default.xml", cg.settingDirectory, cameraType)
+}
+
+func (cg *CmdGenerator) getCameraSettingDir() string {
+	cameraType := strings.ToLower(cg.job.CameraType)
+	return fmt.Sprintf("%s/%s", cg.settingDirectory, cameraType)
 }
 
 func (cg *CmdGenerator) getCmdOpts() map[string]string {
@@ -87,7 +88,8 @@ func (cg *CmdGenerator) getCmdOpts() map[string]string {
 		"top_rectify_file":    path.Join(videoDir, "top_rectify.xml"),
 		"bottom_rectify_file": path.Join(videoDir, "bottom_rectify.xml"),
 		"mix_rectify_file":    path.Join(videoDir, "mix_rectify.xml"),
-		"camera_setting_file": path.Join(cg.settingDirectory, cg.getCameraSettingFileName()),
+		"camera_setting_file": cg.getCameraSettingFileName(),
+		"camera_setting_dir":  cg.getCameraSettingDir(),
 		"enable_top":          cg.job.EnableTop,
 		"enable_bottom":       cg.job.EnableBottom,
 		"save_debug_img":      cg.job.SaveDebugImg,
