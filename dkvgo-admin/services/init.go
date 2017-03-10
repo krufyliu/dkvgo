@@ -16,14 +16,14 @@ var (
 )
 
 func ormSetup() {
-	dbType := beego.AppConfig.String("db.type")
-	dbHost := beego.AppConfig.String("db.host")
-	dbName := beego.AppConfig.String("db.name")
-	dbPort := beego.AppConfig.String("db.port")
-	dbUser := beego.AppConfig.String("db.user")
-	dbPassword := beego.AppConfig.String("db.password")
-	dbTimezone := beego.AppConfig.String("db.timezone")
-	dbCharset := beego.AppConfig.String("db.charset")
+	dbHost := beego.AppConfig.String("db::host")
+	dbType := beego.AppConfig.String("db::type")
+	dbName := beego.AppConfig.String("db::name")
+	dbPort := beego.AppConfig.String("db::port")
+	dbUser := beego.AppConfig.String("db::user")
+	dbPassword := beego.AppConfig.String("db::password")
+	dbTimezone := beego.AppConfig.String("db::timezone")
+	dbCharset := beego.AppConfig.String("db::charset")
 	if dbHost == "" {
 		dbHost = "localhost"
 	}
@@ -43,6 +43,7 @@ func ormSetup() {
 	orm.RegisterModel(
 		new(models.User), 
 		new(models.Job),
+		new(models.JobState),
 	)
 	if beego.AppConfig.String("runmode") != "production" {
 		orm.Debug = true

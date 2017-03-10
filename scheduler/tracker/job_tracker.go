@@ -1,4 +1,4 @@
-package scheduler
+package tracker
 
 import (
 	"log"
@@ -14,9 +14,10 @@ import (
 var JobTracker jobTracker
 
 type jobTracker struct {
-	sync.RWMutex
+	sync.Mutex
 	store        store.JobStore
 	jobMapping   map[int]map[*job.Task]string
+	id2Job map[int]*job.Job
 	traceChannel chan *taskSnapShot
 }
 
@@ -31,10 +32,13 @@ func (tr *jobTracker) trace() {
 		tc := <-tr.traceChannel
 		task := tc.task
 		_job := task.Job
+		tr.Lock()
 		if tr.jobMapping[_job.ID] == nil {
 			log.Printf("begin tracking %s", _job)
 			tr.jobMapping[_job.ID] = make(map[*job.Task]string)
+			tr.id2Job[_job.ID] = _job
 		}
+		tr.Unlock()
 		tr.jobMapping[_job.ID][task] = tc.runAddr
 		if tc.state != nil {
 			tr.handleState(task, tc.state)
@@ -96,24 +100,56 @@ func (tr *jobTracker) handleState(task *job.Task, state *job.TaskState) {
 	}
 }
 
-func (tr *jobTracker) TraceWorker(w *Worker) {
-	if w.relTask != nil {
-		tr.traceChannel <- &taskSnapShot{w.relTask, nil, w.RemoteAddr()}
+func (tr *jobTracker) TraceTask(t *job.Task, addr string) {
+	if t != nil {
+		tr.traceChannel <- &taskSnapShot{t, nil, addr}
 	}
 }
 
-func (tr *jobTracker) TraceWorkerWithState(w *Worker, state *job.TaskState) {
-	tr.traceChannel <- &taskSnapShot{w.relTask, state, w.RemoteAddr()}
+func (tr *jobTracker) TraceTaskWithState(t *job.Task, addr string, state *job.TaskState) {
+	tr.traceChannel <- &taskSnapShot{t, state, addr}
 }
 
 func (tr *jobTracker) endTraceJob(_job *job.Job) {
+	tr.Lock()
 	delete(tr.jobMapping, _job.ID)
+	delete(tr.id2Job, _job.ID)
+	tr.Unlock()
 	log.Printf("end tracking %s", _job)
 }
 
-// InitJobTracker must be called before it is used
-func InitJobTracker(store store.JobStore) {
+func (tr *jobTracker) StopJobById(jobID int) bool {
+	tr.Lock()
+	defer tr.Unlock()
+	if _job, ok := tr.id2Job[jobID]; ok {
+		log.Printf("try to stop %s", _job)
+		if _job.CompareStatusAndSwap(0x3, 0x1, 0x2) {
+			return true
+		}
+	}
+	return false
+}
+
+func  TraceTask(t *job.Task, addr string) {
+	JobTracker.TraceTask(t, addr)
+}
+
+func TraceTaskWithState(t *job.Task, addr string, state *job.TaskState) {
+	JobTracker.TraceTaskWithState(t, addr, state)
+}
+
+func StopJobById(jobId int) bool {
+	return JobTracker.StopJobById(jobId)
+}
+
+// InitWithStore must be called before it is used
+func InitWithStore(store store.JobStore) {
 	log.Printf("init job tracker")
-	JobTracker = jobTracker{jobMapping: make(map[int]map[*job.Task]string), traceChannel: make(chan *taskSnapShot, 8), store: store}
+	JobTracker = jobTracker{
+		jobMapping: make(map[int]map[*job.Task]string), 
+		id2Job: make(map[int]*job.Job),
+		traceChannel: make(chan *taskSnapShot, 8), 
+		store: store,
+	}
 	go JobTracker.trace()
 }

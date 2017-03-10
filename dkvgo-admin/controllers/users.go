@@ -18,7 +18,7 @@ func (this LoginController) Post() {
 		return
 	}
 	if password == "" {
-		this.Date["json"] = utils.ErrorMap("密码不能为空")
+		this.Data["json"] = utils.ErrorMap("密码不能为空")
 		this.ServeJSON()
 		return
 	}

@@ -1,7 +1,6 @@
 package models
 
 import "time"
-import "github.com/krufyliu/dkvgo/dkvgo-admin/utils"
 
 // User model
 type User struct {
@@ -12,9 +11,4 @@ type User struct {
 	CreateAt time.Time `orm:"auto_now_add"`
 	UpdateAt time.Time `orm:"auto_now"`
 	Jobs     []*Job    `orm:"reverse(many)"`
-}
-
-func UserLogin(email, password string)  {
-	var md5Password = utils.Md5(password)
-
 }

@@ -14,14 +14,15 @@ type Job struct {
 	Priority         int
 	CameraType       string `orm:"size(10)"`
 	Quality          string `orm:"size(10)"`
-	EnableTop        string `orm:"size(10);default(1)"`
-	EnableBottom     string `orm:"size(10);default(1)"`
-	EnableColorAjust string `orm:"size(10);default(1)"`
-	SaveDebugImg     string `orm:"size(10);default(false)"`
+	EnableTop        string `orm:"size(1);default(1)"`
+	EnableBottom     string `orm:"size(1);default(1)"`
+	EnableColorAdjust string `orm:"size(1);default(1)"`
+	SaveDebugImg     string `orm:"size(5);default(false)"`
 	Status           int
 	Progress         float32
 	Creator          *User `orm:"index;rel(fk)"`
 	Operator         *User `orm:"rel(fk)"`
+	State *JobState `orm:"reverse(one)"`
 	// CreatorId        int `orm:"index"`
 	// OperatorId       int
 	CreateAt time.Time `orm:"auto_now_add"`

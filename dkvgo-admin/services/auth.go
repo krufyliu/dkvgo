@@ -11,7 +11,7 @@ func (this *authService) IsLogined() bool {
 }
 
 func (this *authService) GetAuthUser() *models.User {
-	return this.User
+	return this.user
 }
 
 func (this *authService) LoginUser(user *models.User) {
