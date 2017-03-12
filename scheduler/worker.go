@@ -13,6 +13,7 @@ import (
 
 	"github.com/krufyliu/dkvgo/job"
 	"github.com/krufyliu/dkvgo/protocol"
+	"github.com/krufyliu/dkvgo/scheduler/tracker"
 )
 
 type Worker struct {
@@ -33,7 +34,7 @@ func (worker *Worker) RemoteAddr() string {
 
 func (worker *Worker) Attach(ts *job.Task) {
 	worker.relTask = ts
-	JobTracker.TraceWorker(worker)
+	tracker.TraceTask(worker.relTask, worker.RemoteAddr())
 }
 
 func (worker *Worker) Dettach() *job.Task {
@@ -174,7 +175,7 @@ func (worker *Worker) handleREPORT(bag *protocol.HeartBeatBag) error {
 
 func (worker *Worker) dealWithStatus(state *job.TaskState) {
 	log.Printf("%s %s report: %s\n", worker.RemoteAddr(), worker.relTask, state)
-	JobTracker.TraceWorkerWithState(worker, state)
+	tracker.TraceTaskWithState(worker.relTask, worker.RemoteAddr(), state)
 	if state.Status != "RUNNING" {
 		worker.Dettach()
 	}

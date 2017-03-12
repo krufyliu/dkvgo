@@ -146,7 +146,7 @@ func (t *Job) HasCompleted() bool {
 }
 
 func (t *Job) String() string {
-	return fmt.Sprintf("Job-%d(%d-%d)", t.ID, t.StartFrame, t.EndFrame)
+	return fmt.Sprintf("Job-%d(%d-%d/%d)", t.ID, t.StartFrame, t.EndFrame, t.Status)
 }
 
 // TaskOptions describle video composition parameters

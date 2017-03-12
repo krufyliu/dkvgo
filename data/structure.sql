@@ -5,10 +5,12 @@ create table if not exists user (
     username varchar(20) not null,
     email varchar(30) not null,
     password varchar(50) not null,
-    create_at int not null,
-    update_at int not null,
+    last_login_ip varchar(50) not null default "",
+    last_login_time datetime,
+    create_at datetime not null,
+    update_at datetime not null,
     primary key (id),
-    unique email_idx (email)
+    unique email_idx (email),
     unique username_idx(username)
 ) engine=innodb;
 
@@ -22,10 +24,10 @@ create table  if not exists job (
     algorithm varchar(20) not null,
     priority int not null default 100,
     camera_type varchar(10) not null,
+    quality varchar(10) not null,
     enable_top char(10) not null default '1',
     enable_bottom char(10) not null default '1',
     enable_color_adjust char(1) not null default '1',
-    quality varchar(10) not null,
     save_debug_img varchar(10) not null default 'false',
     status int not null default 0,
     progress float not null default 0.0,
@@ -46,7 +48,7 @@ create table if not exists job_state (
     index job_id_idx (job_id)
 ) engine=innodb;
 
--- insert into user values();
-insert into job values (null, 'test', '/data/video_dir/test', '/data/output_dir/test', '1200', '1250', '3D_AURA', '100', 'AURA', '1', '1', '1', '4k', 'true', '0', '0.0', '0', '0', '2016-03-09 16:51:42', '2016-03-09 16:51:42');
+insert into user values(null, 'admin', 'admin@visiondk.com', '32cd9fbfcde4a88327a6afdd5efd9f82', '', '', '2016-03-12 20:39:42', '2016-03-12 20:39:42');
+insert into job values (null, 'test', '/data/video_dir/test', '/data/output_dir/test', '1200', '1250', '3D_AURA', '100', 'AURA', '4k', '1', '1', '1', 'true', '0', '0.0', '0', '0', '2016-03-09 16:51:42', '2016-03-09 16:51:42');
 
 update job set status='0' where status='1' or status='2' 

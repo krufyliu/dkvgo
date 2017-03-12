@@ -7,6 +7,7 @@ import (
 
 	"github.com/krufyliu/dkvgo/job"
 	"github.com/krufyliu/dkvgo/job/store"
+	"github.com/krufyliu/dkvgo/scheduler/tracker"
 )
 
 // DkvScheduler d
@@ -15,7 +16,6 @@ type DkvScheduler struct {
 	mu           sync.Mutex
 	opts         *Options
 	tcpListener  net.Listener
-	httpListener net.Listener
 	TaskPool     *TaskPool
 	Store        store.JobStore
 	runningJobs  map[int]*job.Job
@@ -44,18 +44,27 @@ func (s *DkvScheduler) RemoveRunningJob(_job *job.Job) {
 }
 
 func (s *DkvScheduler) Main() {
+	tracker.InitWithStore(s.Store)
 	tcpListener, err := net.Listen("tcp", s.opts.TCPAddr)
 	if err != nil {
 		log.Fatalf("FATAL: listen %s failed - %s\n", s.opts.TCPAddr, err)
 	}
 	s.tcpListener = tcpListener
-	log.Printf("TCP listen on %s\n", tcpListener.Addr().String())
-	s.runTcpServer()
+	log.Printf("TCP listen on %s\n", tcpListener.Addr())
+	s.Add(1)
+	s.Add(1)
+	go s.runTcpServer()
+	go s.runApiServer()
 	s.Wait()
 }
 
 func (s *DkvScheduler) runTcpServer() {
-	s.Add(1)
 	defer s.Done()
 	TCPServer(s.tcpListener, &ProtocolLoop{ctx: s})
+}
+
+func (s *DkvScheduler) runApiServer() {
+	defer s.Done()
+	log.Printf("HTTP listen on %s", s.opts.HTTPAddr)
+	APIServer(s.opts.HTTPAddr).ListenAndServe()
 }
