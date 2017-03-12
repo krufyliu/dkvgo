@@ -1,25 +1,18 @@
 package controllers
 
 import (
-	"github.com/astaxie/beego"
-	"github.com/krufyliu/dkvgo/dkvgo-admin/utils"
+	"github.com/krufyliu/dkvgo/dkvgo-admin/models"
+	"github.com/krufyliu/dkvgo/dkvgo-admin/services"
 )
 
-type LoginController struct {
-	beego.Controller
+type UsersController struct {
+	BaseController
 }
 
-func (this LoginController) Post() {
-	email := this.GetString("email")
-	password := this.GetString("password")
-	if email == "" {
-		this.Data["json"] = utils.ErrorMap("邮箱不能为空")
-		this.ServeJSON()
-		return
-	}
-	if password == "" {
-		this.Data["json"] = utils.ErrorMap("密码不能为空")
-		this.ServeJSON()
-		return
-	}
+func (this *UsersController) Get() {
+	var users []*models.User
+	_, err := services.UserService.GetUserList(1, 10).All(&users)
+	this.CheckError(err)
+	this.DataJsonResponse(users)
 }
+
