@@ -40,23 +40,16 @@ export default function ({history, app}) {
               cb(null, require('./routes/users'))
             }, 'users')
           }
-        }, /*{
-          path: 'ui/ico',
-          name: 'ui/ico',
+        }, {
+          path: 'jobs',
+          name: 'jobs',
           getComponent (nextState, cb) {
             require.ensure([], require => {
-              cb(null, require('./routes/ui/ico'))
-            }, 'ui-ico')
+              registerModel(app, require('./models/jobs'))
+              cb(null, require('./routes/jobs'))
+            }, 'jobs')
           }
         }, {
-          path: 'ui/search',
-          name: 'ui/search',
-          getComponent (nextState, cb) {
-            require.ensure([], require => {
-              cb(null, require('./routes/ui/search'))
-            }, 'ui-search')
-          }
-        },*/ {
           path: '*',
           name: 'error',
           getComponent (nextState, cb) {

@@ -11,7 +11,7 @@ module.exports = [
   },
   {
     key: 'jobs',
-    name: 'VR任务管理',
+    name: 'VR作业管理',
     icon: 'video-camera'
   }
   /*

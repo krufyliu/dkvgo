@@ -4,8 +4,10 @@ import mockStorge from '../src/utils/mockStorge'
 
 let dataKey = mockStorge('AdminUsers', [
   {
-    email: 'admin@visiondk.com',
-    password: 'visiondk'
+    Id: 1,
+    Email: 'admin@visiondk.com',
+    Username: 'admin',
+    Password: 'visiondk'
   }
 ])
 
@@ -17,14 +19,14 @@ module.exports = {
       message: ''
     }
     const d = global[dataKey].filter(function (item) {
-      return item.email === userItem.email
+      return item.Email === userItem.Email
     })
     if (d.length) {
-      if (d[0].password === userItem.password) {
+      if (d[0].Password === userItem.Password) {
         const now = new Date()
         now.setDate(now.getDate() + 1)
         Cookie.set('user_session', now.getTime(), { path: '/' })
-        Cookie.set('user_name', userItem.username, { path: '/' })
+        Cookie.set('user_id', d[0].Id, { path: '/' })
         response.message = '登录成功'
         response.success = true
       } else {
@@ -36,18 +38,26 @@ module.exports = {
     res.json(response)
   },
 
-  'GET /api/userInfo' (req, res) {
+  'GET /api/auth' (req, res) {
     const response = {
-      success: Cookie.get('user_session') && Cookie.get('user_session') > new Date().getTime(),
-      username: Cookie.get('user_name') || '',
-      message: ''
+      success: Boolean(Cookie.get('user_id') != 'undefined' && Cookie.get('user_session') > new Date().getTime()),
+      message: 'unauthorized'
+    }
+    var users = global[dataKey].filter(function (item) {
+      return item.Id == parseInt(Cookie.get('user_id'))
+    })
+    if (users.length) {
+      var user = users[0]
+      delete(user['Password'])
+      response['user'] = user
+      response['message'] = "success"
     }
     res.json(response)
   },
 
   'DELETE /api/auth' (req, res) {
     Cookie.remove('user_session', { path: '/' })
-    Cookie.remove('user_name', { path: '/' })
+    Cookie.remove('user_id', { path: '/' })
     res.json({
       success: true,
       message: '退出成功'

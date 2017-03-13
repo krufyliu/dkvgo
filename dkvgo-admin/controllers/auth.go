@@ -1,13 +1,20 @@
 package controllers
 
-
 import (
-	"github.com/krufyliu/dkvgo/dkvgo-admin/services"
 	"time"
+
+	"github.com/krufyliu/dkvgo/dkvgo-admin/services"
 )
 
 type AuthController struct {
 	BaseController
+}
+
+func (this *AuthController) Get() {
+	if !this.IsLogin() {
+		this.Abort(401)
+	}
+	this.DataJsonResponse(this.LoginUser(), "user")
 }
 
 func (this *AuthController) Post() {

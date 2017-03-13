@@ -7,7 +7,7 @@ export default {
     login: false,
     loading: false,
     user: {
-      name: 'xxx'
+      username: 'xxx'
     },
     loginButtonLoading: false,
     menuPopoverVisible: false,
@@ -49,13 +49,12 @@ export default {
     }, {call, put}) {
       yield put({type: 'showLoading'})
       const data = yield call(userInfo, parse(payload))
+      console.log('userInfo', data)
       if (data.success) {
         yield put({
           type: 'loginSuccess',
           payload: {
-            user: {
-              name: data.username
-            }
+            user: data.user
           }
         })
       }

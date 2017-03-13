@@ -46,51 +46,7 @@ function list ({ loading, dataSource, pagination, onPageChange, onDeleteItem, on
       dataIndex: 'CreateAt',
       key: 'CreateAt'
     },
-    /*
     {
-      title: '头像',
-      dataIndex: 'avatar',
-      key: 'avatar',
-      width: 64,
-      className: styles.avatar,
-      render: (text) => <img width={24} src={text} />
-    }, {
-      title: '姓名',
-      dataIndex: 'name',
-      key: 'name'
-    }, {
-      title: '昵称',
-      dataIndex: 'nickName',
-      key: 'nickName'
-    }, {
-      title: '年龄',
-      dataIndex: 'age',
-      key: 'age',
-      render: (text) => <span>{text}岁</span>
-    }, {
-      title: '性别',
-      dataIndex: 'isMale',
-      key: 'isMale',
-      render: (text) => <span>{text
-            ? '男'
-            : '女'}</span>
-    }, {
-      title: '电话',
-      dataIndex: 'phone',
-      key: 'phone'
-    }, {
-      title: '邮箱',
-      dataIndex: 'email',
-      key: 'email'
-    }, {
-      title: '住址',
-      dataIndex: 'address',
-      key: 'address'
-    }, {
-      title: '创建时间',
-      dataIndex: 'createTime',
-      key: 'createTime'
-    }, */ {
       title: '操作',
       key: 'operation',
       width: 100,
@@ -127,7 +83,7 @@ function list ({ loading, dataSource, pagination, onPageChange, onDeleteItem, on
         onChange={onPageChange}
         pagination={pagination}
         simple
-        rowKey={record => record.id}
+        rowKey={record => record.Id}
         getBodyWrapper={getBodyWrapper}
       />
     </div>

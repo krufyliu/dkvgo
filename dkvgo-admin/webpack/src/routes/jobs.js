@@ -1,0 +1,106 @@
+import React, { PropTypes } from 'react'
+import { routerRedux } from 'dva/router'
+import { connect } from 'dva'
+import JobList from '../components/jobs/list'
+import JobModal from '../components/jobs/modal'
+import JobSearch from '../components/jobs/search'
+
+function Jobs ({ location, dispatch, jobs }) {
+  const { loading, list, pagination, currentItem, modalVisible, modalType, isMotion } = jobs
+  const { field, keyword } = location.query
+
+  const jobModalProps = {
+    item: modalType === 'create' ? {} : currentItem,
+    type: modalType,
+    visible: modalVisible,
+    onOk (data) {
+      dispatch({
+        type: `jobs/${modalType}`,
+        payload: data
+      })
+    },
+    onCancel () {
+      dispatch({
+        type: 'jobs/hideModal'
+      })
+    }
+  }
+
+  const jobListProps = {
+    dataSource: list,
+    loading,
+    pagination: pagination,
+    location,
+    isMotion,
+    onPageChange (page) {
+      const { query, pathname } = location
+      dispatch(routerRedux.push({
+        pathname: pathname,
+        query: {
+          ...query,
+          page: page.current,
+          pageSize: page.pageSize
+        }
+      }))
+    },
+    onDeleteItem (id) {
+      dispatch({
+        type: 'jobs/delete',
+        payload: id
+      })
+    },
+    onEditItem (item) {
+      dispatch({
+        type: 'jobs/showModal',
+        payload: {
+          modalType: 'update',
+          currentItem: item
+        }
+      })
+    }
+  }
+
+  const jobSearchProps = {
+    field,
+    keyword,
+    isMotion,
+    onSearch (fieldsValue) {
+      fieldsValue.keyword.length ? dispatch(routerRedux.push({
+        pathname: '/jobs',
+        query: {
+          field: fieldsValue.field,
+          keyword: fieldsValue.keyword
+        }
+      })) : dispatch(routerRedux.push({
+        pathname: '/jobs'
+      }))
+    },
+    onAdd () {
+      dispatch({
+        type: 'jobs/showModal',
+        payload: {
+          modalType: 'create'
+        }
+      })
+    }
+  }
+
+  const JobModalGen = () =>
+    <JobModal {...jobModalProps} />
+
+  return (
+    <div className='content-inner'>
+      <JobSearch {...jobSearchProps} />
+      <JobList {...jobListProps} />
+      <JobModalGen />
+    </div>
+  )
+}
+
+Jobs.propTypes = {
+  users: PropTypes.object,
+  location: PropTypes.object,
+  dispatch: PropTypes.func
+}
+
+export default connect(({jobs}) => ({jobs}))(Jobs)

@@ -26,11 +26,11 @@ const login = ({
     <div className={styles.form}>
       <div className={styles.logo}>
         <img src={config.logoSrc} />
-        <span>Ant Design</span>
+        <span>量子工厂</span>
       </div>
       <form>
         <FormItem hasFeedback>
-          {getFieldDecorator('email', {
+          {getFieldDecorator('Email', {
             rules: [
               {
                 required: true,
@@ -40,7 +40,7 @@ const login = ({
           })(<Input size='large' onPressEnter={handleOk} placeholder='用户名' />)}
         </FormItem>
         <FormItem hasFeedback>
-          {getFieldDecorator('password', {
+          {getFieldDecorator('Password', {
             rules: [
               {
                 required: true,

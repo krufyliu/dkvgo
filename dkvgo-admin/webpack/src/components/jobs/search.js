@@ -20,9 +20,9 @@ const search = ({
     keyword,
     size: 'large',
     select: true,
-    selectOptions: [{ value: 'Username', name: '用户名' }, { value: 'Email', name: '邮箱地址' }],
+    selectOptions: [{ value: 'Name', name: '作业名' }, { value: 'VideoDir', name: '视频路径' }],
     selectProps: {
-      defaultValue: field || 'Username'
+      defaultValue: field || 'Name'
     },
     onSearch: (value) => {
       onSearch(value)

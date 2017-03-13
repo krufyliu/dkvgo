@@ -15,7 +15,7 @@ export async function logout (params) {
 }
 
 export async function userInfo (params) {
-  return request('/api/userInfo', {
+  return request('/api/auth', {
     method: 'get',
     data: params
   })
