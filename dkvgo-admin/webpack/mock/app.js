@@ -1,26 +1,23 @@
+const qs = require('qs')
 const Cookie = require('js-cookie')
 import mockStorge from '../src/utils/mockStorge'
 
 let dataKey = mockStorge('AdminUsers', [
   {
-    username: 'guest',
-    password: 'guest'
-  },
-  {
-    username: '吴彦祖',
-    password: '123456'
+    email: 'admin@visiondk.com',
+    password: 'visiondk'
   }
 ])
 
 module.exports = {
   'POST /api/auth' (req, res) {
-    const userItem = req.body
+    const userItem = qs.parse(req.body)
     const response = {
       success: false,
       message: ''
     }
     const d = global[dataKey].filter(function (item) {
-      return item.username === userItem.username
+      return item.email === userItem.email
     })
     if (d.length) {
       if (d[0].password === userItem.password) {

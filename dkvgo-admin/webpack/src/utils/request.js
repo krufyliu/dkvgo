@@ -6,8 +6,9 @@ export default function request (url, options) {
       method: options.method || 'get',
       data: options.data || {},
       processData: options.method === 'get',
-      dataType: 'JSON'
+      dataType: options.dataType || 'JSON'
     }).done((data) => {
+      console.log(data)
       return data
     })
 }
