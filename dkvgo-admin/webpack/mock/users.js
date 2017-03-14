@@ -57,11 +57,11 @@ module.exports = {
   },
 
   'POST /api/users' (req, res) {
-    const newData = req.body
-    newData.createTime = Mock.mock('@now')
-    newData.avatar = Mock.Random.image('100x100', Mock.Random.color(), '#757575', 'png', newData.nickName.substr(0, 1))
+    const newData = qs.parse(req.body)
+    newData.CreateAt = Mock.mock('@now')
+    newData.UpdateAt = Mock.mock('@now')
 
-    newData.id = usersListData.data.length + 1
+    newData.Id = usersListData.data.length + 1
     usersListData.data.unshift(newData)
 
     usersListData.page.total = usersListData.data.length

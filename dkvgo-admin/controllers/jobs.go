@@ -35,7 +35,7 @@ func (this *JobsController) Post() {
 	valid.Required(job.EnableTop, "EnableTop")
 	valid.Required(job.SaveDebugImg, "SaveDebugImg")
 	if valid.HasErrors() {
-		this.ErrorJsonResponse("参数不合符要求", valid.ErrorsMap)
+		this.ErrorJsonResponse("参数不合符要求", valid.Errors)
 	}
 	job.EnableBottom = job.EnableTop
 	job.Creator = this.LoginUser()

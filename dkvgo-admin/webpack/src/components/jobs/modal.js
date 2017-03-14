@@ -28,11 +28,8 @@ const modal = ({
 }) => {
   function handleOk (e) {
     e.preventDefault()
-    console.log('handleOK')
-    validateFieldsAndScroll((err, values) => {
-      console.log("here")
-      if (!err) {
-        console.log(values)
+    validateFieldsAndScroll((errors) => {
+      if (errors) {
         return
       }
       var data = {
@@ -52,10 +49,11 @@ const modal = ({
         callback('结束帧不能小于开始帧')
       }
     }
+    callback()
   }
 
   const modalOpts = {
-    title: `${type === 'create' ? '新建任务' : '修改用户'}`,
+    title: `${type === 'create' ? '新建任务' : '修改任务'}`,
     visible,
     onOk: handleOk,
     onCancel,
@@ -151,7 +149,7 @@ const modal = ({
             </RadioGroup>
           )}
         </FormItem>
-        <FormItem {...formItemLayout} label="生成顶底">
+        <FormItem {...formItemLayout} label='生成顶底'>
           {getFieldDecorator('EnableTop', { initialValue: item.EnableTop || '0' })(
             <RadioGroup>
               <Radio value="1">是</Radio>
@@ -159,7 +157,7 @@ const modal = ({
             </RadioGroup>
           )}
         </FormItem>
-        <FormItem {...formItemLayout} label="保留调试图片">
+        <FormItem {...formItemLayout} label='保留调试图片'>
           {getFieldDecorator('SaveDebugImg', { initialValue: item.SaveDebugImg || 'false' })(
             <RadioGroup>
               <Radio value="true">是</Radio>

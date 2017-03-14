@@ -71,11 +71,11 @@ module.exports = {
   },
 
   'POST /api/jobs' (req, res) {
-    const newData = req.body
+    const newData = qs.parse(req.body)
     newData.CreateAt = Mock.mock('@now')
     newData.UpdateAt = Mock.mock('@now')
 
-    newData.id = jobsListData.data.length + 1
+    newData.Id = jobsListData.data.length + 1
     jobsListData.data.unshift(newData)
 
     jobsListData.page.total = jobsListData.data.length

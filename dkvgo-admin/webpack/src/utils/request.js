@@ -12,7 +12,7 @@ export default function request (url, options) {
 
   var method, headers, xsrf
   method = options.method || 'get'
-  headers = options.data || {} 
+  headers = options.headers || {} 
   xsrf = getXsrfToken()
   if (xsrf != "" && method.toUpperCase() !== 'GET') {
     headers['X-Xsrftoken'] = base64_decode(xsrf)

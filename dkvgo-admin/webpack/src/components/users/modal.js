@@ -25,6 +25,7 @@ const modal = ({
 }) => {
   function handleOk () {
     validateFields((errors) => {
+      console.log("here")
       if (errors) {
         return
       }
