@@ -7,6 +7,18 @@ import (
 
 type jobService struct {}
 
+func (this *jobService) GetTotal() (int64, error) {
+	return o.QueryTable(&models.Job{}).Count()
+}
+
+func (this *jobService) GetPage(current, pageSize int) (*Page, error) {
+	total, err := this.GetTotal()
+	if err != nil {
+		return nil, err
+	}
+	return &Page {Total: total, Current: current, PageSize: pageSize}, nil
+}
+
 func (this *jobService) CreateJob(name, videoDir, outDir string, startFrame, endFrame, priority int, 
 		cameraType, enableTop, enableBottom, saveDebugImg string) (*models.Job, error){
     job := &models.Job {

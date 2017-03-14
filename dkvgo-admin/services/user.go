@@ -12,6 +12,14 @@ func (this *userService) GetTotal() (int64, error) {
 	return o.QueryTable(&models.User{}).Count()
 }
 
+func (this *userService) GetPage(current, pageSize int) (*Page, error) {
+	total, err := this.GetTotal()
+	if err != nil {
+		return nil, err
+	}
+	return &Page {Total: total, Current: current, PageSize: pageSize}, nil
+}
+
 func (this *userService) GetUserById(userId int) (*models.User, error) {
 	user := &models.User{Id: userId}
 	err := o.Read(user)

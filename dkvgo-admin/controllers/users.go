@@ -10,8 +10,14 @@ type UsersController struct {
 }
 
 func (this *UsersController) Get() {
-	var users []*models.User
-	_, err := services.UserService.GetUserList(1, 10).All(&users)
+	page, err := this.GetInt("page", 1)
 	this.CheckError(err)
-	this.DataJsonResponse(users)
+	pageSize, err := this.GetInt("size", 10)
+	this.CheckError(err)
+	var users []*models.User
+	qs := services.UserService.GetUserList(page, pageSize)
+	_, err = qs.OrderBy("-UpdateAt").All(&users)
+	this.CheckError(err)
+	pager, err := services.UserService.GetPage(page, pageSize)
+	this.DataJsonResponseWithPage(users, pager)
 }

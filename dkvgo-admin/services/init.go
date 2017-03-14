@@ -9,6 +9,12 @@ import (
 	"net/url"
 )
 
+type Page struct {
+	Total int64 `json:"total"`
+	Current int `json:"current"`
+	PageSize int `josn:"pageSize"`
+}
+
 var (
 	o  orm.Ormer
 	UserService *userService

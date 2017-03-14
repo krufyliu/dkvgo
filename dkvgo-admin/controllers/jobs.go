@@ -16,24 +16,42 @@ func (this *JobsController) Get() {
 	this.CheckError(err)
 	pageSize, err := this.GetInt("size", 10)
 	this.CheckError(err)
-	_, err = services.JobService.GetJobList(page, pageSize).RelatedSel("Creator", "Operator").All(&jobs)
+	qs := services.JobService.GetJobList(page, pageSize)
+	_, err = qs.OrderBy("-UpdateAt").RelatedSel("Creator", "Operator").All(&jobs)
 	this.CheckError(err)
-	this.DataJsonResponse(jobs)
+	pager, err := services.JobService.GetPage(page, pageSize)
+	this.CheckError(err)
+	this.DataJsonResponseWithPage(jobs, pager)
 }
 
 func (this *JobsController) Post() {
-	job := models.Job{}
+	startFrame, err := this.GetInt("StartFrame")
+	this.CheckError(err)
+	endFrame, err := this.GetInt("EndFrame")
+	this.CheckError(err)
+	job := models.Job {
+		Name: this.GetString("Name"),
+		VideoDir: this.GetString("VideoDir"),
+		OutputDir: this.GetString("OutputDir"),
+		StartFrame: startFrame,
+		EndFrame: endFrame,
+		CameraType: this.GetString("CameraType"),
+		Quality: this.GetString("Quality"),
+		EnableTop: this.GetString("EnableTop"),
+		EnableBottom: this.GetString("EnableBottom"),
+		SaveDebugImg: this.GetString("SaveDebugImg"),
+	}
 	valid := validation.Validation{}
 	valid.Required(job.Name, "Name")
 	valid.Required(job.VideoDir, "VideoDir")
 	valid.Required(job.OutputDir, "OutputDir")
-	valid.Required(job.StartFrame, "StartFrame")
-	valid.Required(job.EndFrame, "EndFrame")
-	valid.Min(job.StartFrame, 0, "StartFrame")
-	valid.Min(job.EndFrame, 0, "Endframe")
 	valid.Required(job.CameraType, "Cameratype")
 	valid.Required(job.EnableTop, "EnableTop")
+	valid.Required(job.EnableBottom, "EnableTop")
 	valid.Required(job.SaveDebugImg, "SaveDebugImg")
+	if (startFrame >= endFrame) {
+		valid.SetError("StartFrame", "StartFrame必须小于EndFrame")
+	}
 	if valid.HasErrors() {
 		this.ErrorJsonResponse("参数不合符要求", valid.Errors)
 	}

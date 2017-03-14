@@ -34,10 +34,9 @@ export default {
   },
 
   effects: {
-    *query ({ payload }, { call, put }) {
+    *query ({ payload }, { call, put}) {
       yield put({ type: 'showLoading' })
       const data = yield call(query, parse(payload))
-      console.log(data)
       if (data) {
         yield put({
           type: 'querySuccess',
@@ -64,24 +63,15 @@ export default {
         })
       }
     },
-    *create ({ payload }, { call, put }) {
+    *create ({ payload }, { call, put, select }) {
       yield put({ type: 'hideModal' })
       yield put({ type: 'showLoading' })
       const data = yield call(create, payload)
       if (data && data.success) {
-        yield put({
-          type: 'querySuccess',
-          payload: {
-            list: data.data,
-            pagination: {
-              total: data.page.total,
-              current: data.page.current
-            }
-          }
-        })
+        window.location.reload()
       }
     },
-    *update ({ payload }, { select, call, put }) {
+    *update ({ payload }, { select, call}) {
       yield put({ type: 'hideModal' })
       yield put({ type: 'showLoading' })
       const id = yield select(({ users }) => users.currentItem.id)
@@ -122,6 +112,19 @@ export default {
           ...state.pagination,
           ...pagination
         }}
+    },
+    createSuccess (state, action) {
+      const job = action.job
+      list = [...state.list]
+      list.unshift(job)
+      return { ...state,
+        list,
+        loading: false,
+        pagination: {
+          ...state.pagination,
+          total: state.pagination.total + 1
+        }
+      }
     },
     showModal (state, action) {
       return { ...state, ...action.payload, modalVisible: true }

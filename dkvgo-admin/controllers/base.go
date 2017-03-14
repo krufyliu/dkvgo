@@ -88,6 +88,15 @@ func (this *BaseController) DataJsonResponse(data interface{}, field ...string) 
 	this.JsonResponse(out)
 }
 
+func (this *BaseController) DataJsonResponseWithPage(data interface{}, page interface{}) {
+	out := make(map[string]interface{})
+	out["success"] = MSG_OK
+	out["message"] = "success"
+	out["data"] = data
+	out["page"] = page
+	this.JsonResponse(out)
+}
+
 func (this *BaseController) ErrorJsonResponse(msg string, detail interface{}) {
 	out := make(map[string]interface{})
 	out["success"] = MSG_ERR
