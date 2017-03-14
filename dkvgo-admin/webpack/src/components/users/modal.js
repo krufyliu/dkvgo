@@ -41,7 +41,6 @@ const modal = ({
     visible,
     onOk: handleOk,
     onCancel,
-    width: 600,
     wrapClassName: 'vertical-center-modal'
   }
 
