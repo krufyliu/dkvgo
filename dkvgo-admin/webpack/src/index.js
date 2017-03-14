@@ -1,4 +1,3 @@
-import './index.html'
 import dva from 'dva'
 import { browserHistory } from 'dva/router'
 

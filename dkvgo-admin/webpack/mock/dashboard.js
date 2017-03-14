@@ -1,8 +1,8 @@
-import {color} from '../src/utils/theme'
+const color = require('../src/utils/theme')
 const Mock = require('mockjs')
-import mockStorge from '../src/utils/mockStorge'
+const ms = require('../src/utils/mockStorge')
 
-let dataKey = mockStorge('Dashboard', Mock.mock({
+let dataKey = ms.mockStorge('Dashboard', Mock.mock({
   'cpu': {
     'usage|50-600': 1,
     space: 825,

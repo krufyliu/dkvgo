@@ -1,7 +1,21 @@
 const Watch = require('watchjs')
-import config from './config'
+const config = require('./config')
 
-export default function mockStorge (name, defaultValue) {
+module.exports = {}
+
+if (typeof localStorage === 'undefined') {
+    localStorage = {
+      data: {},
+      getItem: function(key) {
+        return this.data[key]
+      },
+      setItem(key, value) {
+        this.data[key] = value
+      }
+    }
+}
+
+module.exports.default = module.exports.mockStorge = function (name, defaultValue) {
   let key = config.prefix + name
   global[key] = localStorage.getItem(key)
     ? JSON.parse(localStorage.getItem(key))

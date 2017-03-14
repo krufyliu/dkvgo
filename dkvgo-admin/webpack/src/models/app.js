@@ -6,9 +6,7 @@ export default {
   state: {
     login: false,
     loading: false,
-    user: {
-      username: 'xxx'
-    },
+    user: {},
     loginButtonLoading: false,
     menuPopoverVisible: false,
     siderFold: localStorage.getItem('antdAdminSiderFold') === 'true',
@@ -34,9 +32,7 @@ export default {
         yield put({
           type: 'loginSuccess',
           payload: {
-            user: {
-              name: payload.username
-            }
+            user: data.user
           }})
       } else {
         yield put({

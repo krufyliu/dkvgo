@@ -1,15 +1,15 @@
 import React, { PropTypes } from 'react'
-import { Form, Input, InputNumber, Radio, Modal } from 'antd'
+import { Form, Input, InputNumber, Radio, Modal, Col } from 'antd'
 
 const FormItem = Form.Item
 const RadioGroup = Radio.Group
 
 const formItemLayout = {
   labelCol: {
-    span: 4
+    span: 5
   },
   wrapperCol: {
-    span: 18
+    span: 17
   }
 }
 
@@ -21,21 +21,37 @@ const modal = ({
   onCancel,
   form: {
     getFieldDecorator,
-    validateFields,
-    getFieldsValue
+    validateFieldsAndScroll,
+    getFieldsValue,
+    getFieldValue
   }
 }) => {
-  function handleOk () {
-    validateFields((errors) => {
-      if (errors) {
+  function handleOk (e) {
+    e.preventDefault()
+    console.log('handleOK')
+    validateFieldsAndScroll((err, values) => {
+      console.log("here")
+      if (!err) {
+        console.log(values)
         return
       }
-      const data = {
+      var data = {
         ...getFieldsValue(),
         key: item.key
       }
+      data.EnableBottom = data.EnableTop
       onOk(data)
     })
+  }
+
+  function checkStartEnd(rule, value, callback) {
+    var startValue = getFieldValue('StartFrame')
+    var endValue = getFieldValue('EndFrame')
+    if (startValue && endValue) {
+      if (parseInt(startValue) >= parseInt(endValue)) {
+        callback('结束帧不能小于开始帧')
+      }
+    }
   }
 
   const modalOpts = {
@@ -49,7 +65,7 @@ const modal = ({
 
   return (
     <Modal {...modalOpts}>
-      <Form horizontal>
+      <Form layout="horizontal">
         <FormItem label='作业名：' hasFeedback {...formItemLayout}>
           {getFieldDecorator('Name', {
             initialValue: item.Name,
@@ -83,27 +99,40 @@ const modal = ({
             ]
           })(<Input autoComplete='off'/>)}
         </FormItem>
-        <FormItem label='开始帧：' hasFeedback {...formItemLayout}>
-          {getFieldDecorator('StartFrame', {
-            initialValue: item.StartFrame,
-            rules: [
-              {
-                required: true,
-                message: '开始帧不能为空'
-              }
-            ]
-          })(<InputNumber autoComplete='off'/>)}
-        </FormItem>
-        <FormItem label='结束帧：' hasFeedback {...formItemLayout}>
-          {getFieldDecorator('OutputDir', {
-            initialValue: item.EndFrame,
-            rules: [
-              {
-                required: true,
-                message: '结束帧不能为空'
-              }
-            ]
-          })(<InputNumber autoComplete='off'/>)}
+        <FormItem label='起始帧：' {...formItemLayout}>
+          <Col span="6">
+            <FormItem  {...formItemLayout}>
+              {getFieldDecorator('StartFrame', {
+                initialValue: item.StartFrame,
+                rules: [
+                  {
+                    required: true,
+                    message: '开始帧不能为空'
+                  }, {
+                    validator: checkStartEnd 
+                  }
+                ]
+              })(<InputNumber min={0} autoComplete='off' />)}
+            </FormItem>
+          </Col>
+          <Col span="1">
+            <p className="ant-form-split">-</p>
+          </Col>
+          <Col span="6" push="1">
+            <FormItem {...formItemLayout}>
+              {getFieldDecorator('EndFrame', {
+                initialValue: item.EndFrame,
+                rules: [
+                  {
+                    required: true,
+                    message: '结束帧不能为空'
+                  }, {
+                    validator: checkStartEnd
+                  }
+                ]
+              })(<InputNumber min={0} autoComplete='off' />)}
+            </FormItem>
+          </Col>
         </FormItem>
         <FormItem {...formItemLayout} label="相机类型">
           {getFieldDecorator('CameraType', { initialValue: item.CameraType || 'AURA'})(
@@ -113,7 +142,7 @@ const modal = ({
             </RadioGroup>
           )}
         </FormItem>
-        <FormItem {...formItemLayout} label="质量">
+        <FormItem {...formItemLayout} label="分辨率">
           {getFieldDecorator('Quality', { initialValue: item.Quality || '8k' })(
             <RadioGroup>
               <Radio value="8k">8K</Radio>
@@ -122,19 +151,19 @@ const modal = ({
             </RadioGroup>
           )}
         </FormItem>
-        <FormItem {...formItemLayout} label="生成顶">
-          {getFieldDecorator('EnableTop', { initialValue: item.EnableTop || '1' })(
+        <FormItem {...formItemLayout} label="生成顶底">
+          {getFieldDecorator('EnableTop', { initialValue: item.EnableTop || '0' })(
             <RadioGroup>
               <Radio value="1">是</Radio>
               <Radio value="0">否</Radio>
             </RadioGroup>
           )}
         </FormItem>
-        <FormItem {...formItemLayout} label="生成底">
-          {getFieldDecorator('EnableBottom', { initialValue: item.EnableBottom || '1' })(
+        <FormItem {...formItemLayout} label="保留调试图片">
+          {getFieldDecorator('SaveDebugImg', { initialValue: item.SaveDebugImg || 'false' })(
             <RadioGroup>
-              <Radio value="1">是</Radio>
-              <Radio value="0">否</Radio>
+              <Radio value="true">是</Radio>
+              <Radio value="false">否</Radio>
             </RadioGroup>
           )}
         </FormItem>

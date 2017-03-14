@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	MSG_OK       = true  // ajax输出错误码，成功
-	MSG_ERR      = false // 错误
+	MSG_OK  = true  // ajax输出错误码，成功
+	MSG_ERR = false // 错误
 )
 
 type BaseController struct {
@@ -17,7 +17,15 @@ type BaseController struct {
 }
 
 func (this *BaseController) Prepare() {
-	
+	if this.Ctx.Input.Method() == "POST" && this.Ctx.Input.URI() == "/api/auth" {
+		if this.IsLogin() {
+			this.ShowErrorMsg("has authorized")
+		}
+	} else {
+		if !this.IsLogin() {
+			this.ShowErrorMsg("authorized")
+		}
+	}
 }
 
 func (this *BaseController) LoginUser() *models.User {
@@ -56,7 +64,7 @@ func (this *BaseController) ShowSuccessMsg(msg string) {
 }
 
 func (this *BaseController) GetClientIP() string {
-	if p := this.Ctx.Input.Proxy(); len (p) > 0 {
+	if p := this.Ctx.Input.Proxy(); len(p) > 0 {
 		return p[0]
 	}
 	return this.Ctx.Input.IP()
@@ -74,7 +82,7 @@ func (this *BaseController) DataJsonResponse(data interface{}, field ...string) 
 		fieldname = field[0]
 	}
 	out := make(map[string]interface{})
-	out["status"] = MSG_OK
+	out["success"] = MSG_OK
 	out["message"] = "success"
 	out[fieldname] = data
 	this.JsonResponse(out)
@@ -82,7 +90,7 @@ func (this *BaseController) DataJsonResponse(data interface{}, field ...string) 
 
 func (this *BaseController) ErrorJsonResponse(msg string, detail interface{}) {
 	out := make(map[string]interface{})
-	out["status"] = MSG_ERR
+	out["success"] = MSG_ERR
 	out["message"] = msg
 	out["errors"] = detail
 	this.JsonResponse(out)

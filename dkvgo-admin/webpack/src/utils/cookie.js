@@ -1,7 +1,8 @@
 module.exports = {
     getCookie: function(c_name) {
+        var c_start, c_end
         if (document.cookie.length > 0) {
-            var c_start = document.cookie.indexOf(c_name + "=")
+            c_start = document.cookie.indexOf(c_name + "=")
             if (c_start != -1) {
                 c_start = c_start + c_name.length + 1
                 c_end = document.cookie.indexOf(";", c_start)

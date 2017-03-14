@@ -15,4 +15,3 @@ func (this *UsersController) Get() {
 	this.CheckError(err)
 	this.DataJsonResponse(users)
 }
-

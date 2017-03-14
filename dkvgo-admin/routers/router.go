@@ -1,14 +1,17 @@
 package routers
 
 import (
-	"github.com/krufyliu/dkvgo/dkvgo-admin/controllers"
 	"github.com/astaxie/beego"
+	"github.com/krufyliu/dkvgo/dkvgo-admin/controllers"
 )
 
 func init() {
-	beego.Router("/auth", &controllers.AuthController{})
-	beego.Router("/users", &controllers.UsersController{})
-	beego.Router("/jobs", &controllers.JobsController{})
+	apiNs := beego.NewNamespace("/api",
+		beego.NSRouter("/auth", &controllers.AuthController{}),
+		beego.NSRouter("/users", &controllers.UsersController{}),
+		beego.NSRouter("/jobs", &controllers.JobsController{}),
+	)
+	beego.AddNamespace(apiNs)
 	beego.AutoRouter(&controllers.TestController{})
-    beego.Router("/", &controllers.MainController{})
+	beego.Router("*", &controllers.MainController{})
 }

@@ -1,8 +1,8 @@
 const qs = require('qs')
 const Mock = require('mockjs')
-import mockStorge from '../src/utils/mockStorge'
+const ms = require('../src/utils/mockStorge')
 
-let dataKey = mockStorge('UsersList', Mock.mock({
+let dataKey = ms.mockStorge('UsersList', Mock.mock({
   'data|100': [
     {
       'Id|+1': 1,
@@ -52,7 +52,8 @@ module.exports = {
       usersListData.page.current = currentPage * 1
       newPage = usersListData.page
     }
-    res.json({success: true, data, page: {...newPage, pageSize: Number(pageSize)}})
+    newPage.pageSize = Number(pageSize)
+    res.json({success: true, data, page: newPage})
   },
 
   'POST /api/users' (req, res) {
@@ -67,7 +68,7 @@ module.exports = {
     usersListData.page.current = 1
 
     global[dataKey] = usersListData
-
+    
     res.json({success: true, data: usersListData.data, page: usersListData.page})
   },
 

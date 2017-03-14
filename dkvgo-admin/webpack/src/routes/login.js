@@ -26,7 +26,7 @@ const login = ({
     <div className={styles.form}>
       <div className={styles.logo}>
         <img src={config.logoSrc} />
-        <span>量子工厂</span>
+        <span>量子VR工厂</span>
       </div>
       <form>
         <FormItem hasFeedback>
@@ -54,10 +54,6 @@ const login = ({
             登录
           </Button>
         </Row>
-        <p>
-          <span>账号：guest</span>
-          <span>密码：guest</span>
-        </p>
       </form>
     </div>
   )

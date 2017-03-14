@@ -38,7 +38,7 @@ function list ({ loading, dataSource, pagination, onPageChange, onDeleteItem, on
       key: 'CameraType'
     },
     {
-      title: '质量',
+      title: '分辨率',
       dataIndex: 'Quality',
       key: 'Quality'
     },

@@ -24,20 +24,22 @@ func (this *JobsController) Get() {
 func (this *JobsController) Post() {
 	job := models.Job{}
 	valid := validation.Validation{}
-	valid.Required(job.Name, "name")
-	valid.Required(job.VideoDir, "video_dir")
-	valid.Required(job.OutputDir, "output_dir")
-	valid.Required(job.StartFrame, "start_frame")
-	valid.Required(job.EndFrame, "end_frame")
-	valid.Min(job.StartFrame, 0, "start_frame")
-	valid.Min(job.EndFrame, 0, "end_frame")
-	valid.Required(job.CameraType, "camera_type")
-	valid.Required(job.EnableTop, "enable_top")
-	valid.Required(job.EnableBottom, "enable_bottom")
-	valid.Required(job.SaveDebugImg, "save_debug_img")
+	valid.Required(job.Name, "Name")
+	valid.Required(job.VideoDir, "VideoDir")
+	valid.Required(job.OutputDir, "OutputDir")
+	valid.Required(job.StartFrame, "StartFrame")
+	valid.Required(job.EndFrame, "EndFrame")
+	valid.Min(job.StartFrame, 0, "StartFrame")
+	valid.Min(job.EndFrame, 0, "Endframe")
+	valid.Required(job.CameraType, "Cameratype")
+	valid.Required(job.EnableTop, "EnableTop")
+	valid.Required(job.SaveDebugImg, "SaveDebugImg")
 	if valid.HasErrors() {
-		//this.ErrorJsonResponse("参数不合符要求", valid.Errors)
+		this.ErrorJsonResponse("参数不合符要求", valid.ErrorsMap)
 	}
+	job.EnableBottom = job.EnableTop
+	job.Creator = this.LoginUser()
+	job.Operator = this.LoginUser()
 	services.JobService.AddJob(&job)
 	this.DataJsonResponse(job)
 }

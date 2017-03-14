@@ -17,8 +17,11 @@ module.exports = function (webpackConfig, env) {
     }])
   } else {
     webpackConfig.babel.plugins.push('dev-expression')
-    webpackConfig.entry = {index: './src/_index.js'}
-    webpackConfig.output = {path: '../static'}
+    webpackConfig.entry = {index: './src/index.js'}
+    webpackConfig.output = {
+      path: '../public/assets', 
+      publicPath: "/assets/",
+      filename: '[name].js'}
   }
 
   // Don't extract common.js and common.css

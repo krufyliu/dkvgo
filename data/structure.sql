@@ -48,7 +48,7 @@ create table if not exists job_state (
     index job_id_idx (job_id)
 ) engine=innodb;
 
-insert into user values(null, 'admin', 'admin@visiondk.com', '32cd9fbfcde4a88327a6afdd5efd9f82', '', '', '2016-03-12 20:39:42', '2016-03-12 20:39:42');
+insert into user values(null, 'admin', 'admin@visiondk.com', '32cd9fbfcde4a88327a6afdd5efd9f82', '', null, '2016-03-12 20:39:42', '2016-03-12 20:39:42');
 insert into job values (null, 'test', '/data/video_dir/test', '/data/output_dir/test', '1200', '1250', '3D_AURA', '100', 'AURA', '4k', '1', '1', '1', 'true', '0', '0.0', '0', '0', '2016-03-09 16:51:42', '2016-03-09 16:51:42');
 
 update job set status='0' where status='1' or status='2' 

@@ -1,8 +1,8 @@
 const qs = require('qs')
 const Cookie = require('js-cookie')
-import mockStorge from '../src/utils/mockStorge'
+const ms = require('../src/utils/mockStorge')
 
-let dataKey = mockStorge('AdminUsers', [
+let dataKey = ms.mockStorge('AdminUsers', [
   {
     Id: 1,
     Email: 'admin@visiondk.com',
@@ -29,6 +29,7 @@ module.exports = {
         Cookie.set('user_id', d[0].Id, { path: '/' })
         response.message = '登录成功'
         response.success = true
+        response.user = d[0]
       } else {
         response.message = '密码不正确'
       }

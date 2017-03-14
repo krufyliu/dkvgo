@@ -46,7 +46,7 @@ const modal = ({
 
   return (
     <Modal {...modalOpts}>
-      <Form horizontal>
+      <Form layout="horizontal">
         <FormItem label='用户名：' hasFeedback {...formItemLayout}>
           {getFieldDecorator('Username', {
             initialValue: item.Username,

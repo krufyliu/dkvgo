@@ -11,5 +11,6 @@ import (
 func main() {
 	services.Init()
 	orm.RunCommand()
+	beego.SetStaticPath("/assets", "public/assets")
 	beego.Run()
 }
