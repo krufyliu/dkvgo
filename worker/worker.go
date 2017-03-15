@@ -137,7 +137,7 @@ func (w *DkvWorker) runTask(t *job.Task) {
 	}
 	go w.collectTaskStatus(rd)
 	w.ctx.cmd.Stdout = wd
-	w.ctx.cmd.Stderr = os.Stderr
+	w.ctx.cmd.Stderr = wd
 	w.ctx.state.Status = "RUNNING"
 	log.Printf("run shell task %+v\n", w.ctx.cmd.Args)
 	var currentSession = w.sessionID

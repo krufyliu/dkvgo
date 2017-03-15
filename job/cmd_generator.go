@@ -88,22 +88,29 @@ func (cg *CmdGenerator) getCmdOpts() map[string]string {
 		"top_rectify_file":    path.Join(videoDir, "top_rectify.xml"),
 		"bottom_rectify_file": path.Join(videoDir, "bottom_rectify.xml"),
 		"mix_rectify_file":    path.Join(videoDir, "mix_rectify.xml"),
-		"camera_setting_file": cg.getCameraSettingFileName(),
-		"camera_setting_dir":  cg.getCameraSettingDir(),
-		"enable_top":          cg.job.EnableTop,
-		"enable_bottom":       cg.job.EnableBottom,
-		"save_debug_img":      cg.job.SaveDebugImg,
-		"start_frame":         strconv.Itoa(startFrame),
-		"end_frame":           strconv.Itoa(cg.segOptions.EndFrame),
-		"save_type":           cg.getSaveType(),
-		"thread_num":          strconv.Itoa(cg.threadNum),
+		//"camera_setting_file": cg.getCameraSettingFileName(),
+		"camera_setting_file_dir": cg.getCameraSettingDir(),
+		"enable_top":              cg.job.EnableTop,
+		"enable_bottom":           cg.job.EnableBottom,
+		"save_debug_img":          cg.job.SaveDebugImg,
+		"start_frame":             strconv.Itoa(startFrame),
+		"end_frame":               strconv.Itoa(cg.segOptions.EndFrame),
+		"save_type":               cg.getSaveType(),
+		"thread_num":              strconv.Itoa(cg.threadNum),
 	}
 	return opts
 }
 
 // GetCmd get a exec.Cmd
 func (cg *CmdGenerator) GetCmd() *exec.Cmd {
-	args := util.MapToCmdArgs(cg.getCmdOpts(), "-")
+	fields := []string{
+		"video_dir", "output_dir", "time_alignment_file",
+		"camera_setting_file_dir", "ring_rectify_file",
+		"top_rectify_file", "bottom_rectify_file", "mix_rectify_file",
+		"start_frame", "end_frame", "enable_top", "enable_bottom",
+		"save_type", "save_debug_img", "thread_num",
+	}
+	args := util.MapToCmdArgs(cg.getCmdOpts(), "-", fields...)
 	return exec.Command(path.Join(cg.binDirecotry, cg.getBinName()), args...)
 }
 
