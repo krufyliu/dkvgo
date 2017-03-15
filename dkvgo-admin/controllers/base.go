@@ -23,7 +23,7 @@ func (this *BaseController) Prepare() {
 		}
 	} else {
 		if !this.IsLogin() {
-			this.ShowErrorMsg("authorized")
+			this.ShowErrorMsg("already authorized")
 		}
 	}
 }

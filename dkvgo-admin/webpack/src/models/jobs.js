@@ -1,4 +1,4 @@
-import { create, remove, update, query } from '../services/jobs'
+import { create, stop, resume, remove, update, query } from '../services/jobs'
 import { parse } from 'qs'
 
 export default {
@@ -10,7 +10,7 @@ export default {
     currentItem: {},
     modalVisible: false,
     modalType: 'create',
-    isMotion: true,
+    isMotion: false,
     pagination: {
       showSizeChanger: true,
       showQuickJumper: true,
@@ -74,18 +74,37 @@ export default {
     *update ({ payload }, { select, call}) {
       yield put({ type: 'hideModal' })
       yield put({ type: 'showLoading' })
-      const id = yield select(({ users }) => users.currentItem.id)
-      const newUser = { ...payload, id }
+      const id = yield select(({ jobs }) => jobs.currentItem.Id)
       const data = yield call(update, newUser)
       if (data && data.success) {
         yield put({
-          type: 'querySuccess',
+          type: 'updateSuccess',
           payload: {
-            list: data.data,
-            pagination: {
-              total: data.page.total,
-              current: data.page.current
-            }
+            job: data.data,
+          }
+        })
+      }
+    },
+    *stop({payload}, {call, put}) {
+      yield put({type: 'showLoading'})
+      const data = yield call(stop, {id: payload})      
+      if (data && data.success) {
+        yield put({
+          type: 'updateSuccess',
+          payload: {
+            job: data.data
+          }
+        })
+      }
+    },
+    *resume({payload}, {call, put}) {
+      yield put({type: 'showLoading'})
+      const data = yield call(resume, {id: payload})      
+      if (data && data.success) {
+        yield put({
+          type: 'updateSuccess',
+          payload: {
+            job: data.data
           }
         })
       }
@@ -114,7 +133,7 @@ export default {
         }}
     },
     createSuccess (state, action) {
-      const job = action.job
+      const job = action.payload.job
       list = [...state.list]
       list.unshift(job)
       return { ...state,
@@ -124,6 +143,20 @@ export default {
           ...state.pagination,
           total: state.pagination.total + 1
         }
+      }
+    },
+    updateSuccess(state, action) {
+      console.log(action.payload)
+      const job = action.payload.job
+      const list = state.list.map((item) => {
+        if (item.Id == job.Id) {
+          return job
+        }
+        return item
+      }) 
+      return { ...state,
+        list,
+        loading: false
       }
     },
     showModal (state, action) {

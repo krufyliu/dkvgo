@@ -5,7 +5,7 @@ import (
 	"github.com/krufyliu/dkvgo/dkvgo-admin/models"
 )
 
-type jobService struct {}
+type jobService struct{}
 
 func (this *jobService) GetTotal() (int64, error) {
 	return o.QueryTable(&models.Job{}).Count()
@@ -16,21 +16,21 @@ func (this *jobService) GetPage(current, pageSize int) (*Page, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Page {Total: total, Current: current, PageSize: pageSize}, nil
+	return &Page{Total: total, Current: current, PageSize: pageSize}, nil
 }
 
-func (this *jobService) CreateJob(name, videoDir, outDir string, startFrame, endFrame, priority int, 
-		cameraType, enableTop, enableBottom, saveDebugImg string) (*models.Job, error){
-    job := &models.Job {
-		Name: name,
-		VideoDir: videoDir,
-		OutputDir: outDir,
-		StartFrame: startFrame,
-		EndFrame: endFrame,
-		Priority: priority,
-		CameraType: cameraType,
-		Algorithm: "3D_" + cameraType,
-		EnableTop: enableTop,
+func (this *jobService) CreateJob(name, videoDir, outDir string, startFrame, endFrame, priority int,
+	cameraType, enableTop, enableBottom, saveDebugImg string) (*models.Job, error) {
+	job := &models.Job{
+		Name:         name,
+		VideoDir:     videoDir,
+		OutputDir:    outDir,
+		StartFrame:   startFrame,
+		EndFrame:     endFrame,
+		Priority:     priority,
+		CameraType:   cameraType,
+		Algorithm:    "3D_" + cameraType,
+		EnableTop:    enableTop,
 		EnableBottom: enableBottom,
 		SaveDebugImg: saveDebugImg,
 	}
@@ -62,4 +62,8 @@ func (this *jobService) GetJob(id int, withState bool) (*models.Job, error) {
 		err = o.Read(job.State)
 	}
 	return job, err
+}
+
+func (this *jobService) Update(job *models.Job, fields ...string) (int64, error) {
+	return o.Update(job, fields...)
 }

@@ -43,6 +43,18 @@ function Jobs ({ location, dispatch, jobs }) {
         }
       }))
     },
+    onStop(id) {
+      dispatch({
+        type: 'jobs/stop',
+        payload: id
+      })
+    },
+    onResume(id) {
+      dispatch({
+        type: 'jobs/resume',
+        payload: id
+      })
+    },
     onDeleteItem (id) {
       dispatch({
         type: 'jobs/delete',

@@ -37,6 +37,6 @@ func (this *AuthController) Post() {
 }
 
 func (this *AuthController) Delete() {
-	this.DelSession("user_id")
+	this.DelSession("userId")
 	this.ShowSuccessMsg("注销成功")
 }

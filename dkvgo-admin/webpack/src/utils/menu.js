@@ -1,7 +1,7 @@
 module.exports = [
   {
     key: 'dashboard',
-    name: '面板',
+    name: '控制台',
     icon: 'laptop'
   },
   {

@@ -14,16 +14,26 @@ export async function create (params) {
   })
 }
 
+export async function stop(params) {
+  return request('/api/jobs/' + params.id + '/action/stop', {
+    method: 'post'
+  })  
+}
+
+export async function resume(params) {
+  return request('/api/jobs/' + params.id + '/action/resume', {
+    method: 'post'
+  })  
+}
+
 export async function remove (params) {
-  return request('/api/jobs', {
+  return request('/api/jobs/' + params.id, {
     method: 'delete',
-    data: params
   })
 }
 
 export async function update (params) {
-  return request('/api/jobs', {
+  return request('/api/jobs/' + params.id, {
     method: 'put',
-    data: params
   })
 }

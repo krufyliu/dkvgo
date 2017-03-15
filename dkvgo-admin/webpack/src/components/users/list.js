@@ -39,12 +39,18 @@ function list ({ loading, dataSource, pagination, onPageChange, onDeleteItem, on
     {
       title: '上次登录时间',
       dataIndex: 'LastLoginTime',
-      key: 'LastLoginTime'
+      key: 'LastLoginTime',
+      render: (text) => {
+        return (new Date(Date.parse(text))).format('yyyy-MM-dd HH:mm:ss')
+      }
     },
     {
       title: '创建时间',
       dataIndex: 'CreateAt',
-      key: 'CreateAt'
+      key: 'CreateAt',
+      render: (text) => {
+        return (new Date(Date.parse(text))).format('yyyy-MM-dd HH:mm:ss')
+      }
     },
     {
       title: '操作',

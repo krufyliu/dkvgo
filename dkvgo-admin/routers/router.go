@@ -10,6 +10,8 @@ func init() {
 		beego.NSRouter("/auth", &controllers.AuthController{}),
 		beego.NSRouter("/users", &controllers.UsersController{}),
 		beego.NSRouter("/jobs", &controllers.JobsController{}),
+		beego.NSRouter("/jobs/:id:int/action/stop", &controllers.JobsController{}, "post:Stop"),
+		beego.NSRouter("/jobs/:id:int/action/resume", &controllers.JobsController{}, "post:Resume"),
 	)
 	beego.AddNamespace(apiNs)
 	beego.AutoRouter(&controllers.TestController{})

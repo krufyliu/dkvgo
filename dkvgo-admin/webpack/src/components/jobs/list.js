@@ -3,19 +3,28 @@ import {Table, Dropdown, Button, Menu, Icon, Modal, Badge, Progress} from 'antd'
 import styles from './list.less'
 import classnames from 'classnames'
 import TableBodyWrapper from '../common/TableBodyWrapper'
-import {getJobStatus, getProccessStatus} from '../../utils/jobStatus'
+import {getJobStatus, getProccessStatus, getActions} from '../../utils/jobStatus'
 
 const confirm = Modal.confirm
 
-function list ({ loading, dataSource, pagination, onPageChange, onDeleteItem, onEditItem, isMotion, location }) {
+function list ({ loading, dataSource, pagination, onPageChange, onDeleteItem, onEditItem, onStop, onResume, isMotion, location }) {
   const handleMenuClick = (record, e) => {
-    if (e.key === '1') {
+    if (e.key === 'detail') {
       onEditItem(record)
-    } else if (e.key === '2') {
+    } else if (e.key == 'stop') {
+      confirm({
+        title: '您确定终止执行吗?',
+        onOk () {
+          onStop(record.Id)
+        }
+      })
+    } else if (e.key == 'resume') {
+      onResume(record.Id)      
+    } else if (e.key === 'delete') {
       confirm({
         title: '您确定要删除这条记录吗?',
         onOk () {
-          onDeleteItem(record.id)
+          onDeleteItem(record.Id)
         }
       })
     }
@@ -43,9 +52,12 @@ function list ({ loading, dataSource, pagination, onPageChange, onDeleteItem, on
       key: 'Quality'
     },
     {
-      title: '创建时间',
-      dataIndex: 'CreateAt',
-      key: 'CreateAt'
+      title: '更新时间',
+      dataIndex: 'UpdateAt',
+      key: 'UpdateAt',
+      render: (text) => {
+        return (new Date(Date.parse(text))).format('yyyy-MM-dd HH:mm:ss')
+      }
     },
     {
       title: '最近操作人',
@@ -79,14 +91,16 @@ function list ({ loading, dataSource, pagination, onPageChange, onDeleteItem, on
       key: 'operation',
       width: 100,
       render: (text, record) => {
-        return (<Dropdown overlay={<Menu onClick={(e) => handleMenuClick(record, e)}>
-          <Menu.Item key='1'>编辑</Menu.Item>
-          <Menu.Item key='2'>删除</Menu.Item>
-        </Menu>}>
-          <Button style={{ border: 'none' }}>
-            <Icon style={{ marginRight: 2 }} type='bars' />
-            <Icon type='down' />
-          </Button>
+        const actions = getActions(record.Status)
+        return (
+          <Dropdown overlay={
+            <Menu onClick={(e) => handleMenuClick(record, e)}>
+              {actions.map(({key, text}) => { return (<Menu.Item key={key}>{text}</Menu.Item>) })}
+            </Menu>}>
+            <Button style={{ border: 'none' }}>
+              <Icon style={{ marginRight: 2 }} type='bars' />
+              <Icon type='down' />
+            </Button>
         </Dropdown>)
       }
     }

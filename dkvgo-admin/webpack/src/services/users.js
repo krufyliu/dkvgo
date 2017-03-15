@@ -15,15 +15,13 @@ export async function create (params) {
 }
 
 export async function remove (params) {
-  return request('/api/users', {
+  return request('/api/users/' + params.id, {
     method: 'delete',
-    data: params
   })
 }
 
 export async function update (params) {
-  return request('/api/users', {
+  return request('/api/users/' + params.id, {
     method: 'put',
-    data: params
   })
 }
