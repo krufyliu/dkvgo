@@ -13,19 +13,19 @@ import (
 // DkvScheduler d
 type DkvScheduler struct {
 	sync.WaitGroup
-	mu           sync.Mutex
-	opts         *Options
-	tcpListener  net.Listener
-	TaskPool     *TaskPool
-	Store        store.JobStore
-	runningJobs  map[int]*job.Job
+	mu          sync.Mutex
+	opts        *Options
+	tcpListener net.Listener
+	TaskPool    *TaskPool
+	Store       store.JobStore
+	runningJobs map[int]*job.Job
 }
 
 func NewDkvScheduler(opts *Options) *DkvScheduler {
 	var sched = &DkvScheduler{
 		opts: opts,
 		//Store: store.NewMockStore(),
-		Store: store.NewDatabaseStore("mysql", "root:mysql1234@/dkvgo?charset=utf8"),
+		Store: store.NewDatabaseStore(opts.DBType, opts.DBAddr),
 	}
 	sched.TaskPool = NewTaskPool(sched)
 	return sched
