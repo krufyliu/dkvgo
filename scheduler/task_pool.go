@@ -28,10 +28,17 @@ func (tp *TaskPool) GetTask() *job.Task {
 	defer tp.Unlock()
 	var elem *list.Element
 	for elem = tp.queue.Front(); elem != nil; elem = tp.queue.Front() {
-		status := elem.Value.(*job.Task).Job.GetStatus()
+		_job := elem.Value.(*job.Task).Job
+		status := _job.GetStatus()
+		// 找到可以运行的task
 		if status == 0x01 || status == 0x02 {
 			break
 		} else {
+			// 如果job处于准备终止状态且当前没有被调度就直接将job置为已停止
+			if status == 0x03 && _job.GetRunning() == 0 {
+				_job.Status = 0x04
+				tp.ctx.Store.UpdateJob(_job)
+			}
 			tp.queue.Remove(elem)
 		}
 	}

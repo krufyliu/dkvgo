@@ -1,12 +1,14 @@
 package scheduler
 
 import (
-	"net/http"
-	"github.com/gorilla/mux"
-	"time"
-	"github.com/krufyliu/dkvgo/scheduler/tracker"
-	"strconv"
 	"encoding/json"
+	"log"
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/krufyliu/dkvgo/scheduler/tracker"
 )
 
 func stopJob(w http.ResponseWriter, r *http.Request) {
@@ -20,16 +22,17 @@ func stopJob(w http.ResponseWriter, r *http.Request) {
 		retMap["message"] = "job is not running"
 	}
 	retJson, _ := json.Marshal(retMap)
+	log.Printf("API: stop task %d, result: %s", jobId, string(retJson))
 	w.Write(retJson)
 }
 
 func APIServer(addr string) *http.Server {
 	router := mux.NewRouter()
- 	router.HandleFunc("/api/jobs/{id:[0-9]+}/action/stop", stopJob).Methods("POST")
+	router.HandleFunc("/api/jobs/{id:[0-9]+}/action/stop", stopJob).Methods("POST")
 	return &http.Server{
-		Handler: router,
-		Addr: addr,
+		Handler:      router,
+		Addr:         addr,
 		WriteTimeout: 2 * time.Second,
-		ReadTimeout: 2 * time.Second,
+		ReadTimeout:  2 * time.Second,
 	}
 }

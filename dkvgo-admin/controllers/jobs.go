@@ -1,8 +1,16 @@
 package controllers
 
 import (
+	"fmt"
+	"net/http"
 	"strconv"
+	"strings"
 
+	"io/ioutil"
+
+	"encoding/json"
+
+	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/validation"
 	"github.com/krufyliu/dkvgo/dkvgo-admin/models"
 	"github.com/krufyliu/dkvgo/dkvgo-admin/services"
@@ -19,6 +27,13 @@ func (this *JobsController) Get() {
 	pageSize, err := this.GetInt("size", 10)
 	this.CheckError(err)
 	qs := services.JobService.GetJobList(page, pageSize)
+	field := this.GetString("field")
+	keyword := this.GetString("keyword")
+	if field != "" && keyword != "" {
+		if field == "Name" || field == "VideoDir" {
+			qs = qs.Filter(field+"__contains", keyword)
+		}
+	}
 	_, err = qs.OrderBy("-UpdateAt").RelatedSel("Creator", "Operator").All(&jobs)
 	this.CheckError(err)
 	pager, err := services.JobService.GetPage(page, pageSize)
@@ -88,16 +103,34 @@ func (this *JobsController) Stop() {
 		job.Operator = this.LoginUser()
 		services.JobService.Update(job, "Status", "UpdateAt")
 	} else if job.Status == 0x01 || job.Status == 0x02 {
-		// var scheApiAddr = beego.AppConfig.String("scheduler.apiaddr")
-		// if scheApiAddr == "" {
-		// 	scheApiAddr = "http://localhost:9999"
-		// } else if !strings.HasPrefix(scheApiAddr, "http://") {
-		// 	scheApiAddr = "http://" + scheApiAddr
-		// }
-		// stopUrl := fmt.Sprintf("%s/jobs/%d/action/stop", scheApiAddr, jobId)
-		job.Status = 0x03
-		job.Operator = this.LoginUser()
-		services.JobService.Update(job, "Status", "Operator", "UpdateAt")
+		var scheAPIAddr = beego.AppConfig.String("scheduler.apiaddr")
+		if scheAPIAddr == "" {
+			scheAPIAddr = "http://localhost:9999"
+		} else if !strings.HasPrefix(scheAPIAddr, "http://") {
+			scheAPIAddr = "http://" + scheAPIAddr
+		}
+		stopURL := fmt.Sprintf("%s/api/jobs/%d/action/stop", scheAPIAddr, jobId)
+		beego.Info("stopURL", stopURL)
+		res, err := http.Post(stopURL, "application/json", nil)
+		defer res.Body.Close()
+		if err != nil {
+			this.ShowErrorMsg("操作失败, 请稍后重试")
+		}
+		if res.StatusCode != 200 {
+			this.ShowErrorMsg("call api: " + res.Status)
+		}
+		body, err := ioutil.ReadAll(res.Body)
+		this.CheckError(err)
+		result := make(map[string]interface{})
+		err = json.Unmarshal(body, &result)
+		this.CheckError(err)
+		if value, ok := result["success"].(bool); ok && value {
+			job.Status = 0x03
+			job.Operator = this.LoginUser()
+			services.JobService.Update(job, "Status", "Operator", "UpdateAt")
+		} else {
+			this.ShowErrorMsg("当前操作不允许")
+		}
 	} else {
 		this.ShowErrorMsg("当前操作不允许")
 	}

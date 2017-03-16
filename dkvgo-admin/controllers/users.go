@@ -16,6 +16,13 @@ func (this *UsersController) Get() {
 	this.CheckError(err)
 	var users []*models.User
 	qs := services.UserService.GetUserList(page, pageSize)
+	field := this.GetString("field")
+	keyword := this.GetString("keyword")
+	if field != "" && keyword != "" {
+		if field == "Username" || field == "Email" {
+			qs = qs.Filter(field+"__contains", keyword)
+		}
+	}
 	_, err = qs.OrderBy("-UpdateAt").All(&users)
 	this.CheckError(err)
 	pager, err := services.UserService.GetPage(page, pageSize)

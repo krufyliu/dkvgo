@@ -109,5 +109,6 @@ func (this *BaseController) CheckError(err error) {
 	if err == nil {
 		return
 	}
+	beego.Error(err)
 	this.ShowMsg(err.Error(), MSG_ERR)
 }

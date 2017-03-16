@@ -124,6 +124,12 @@ func (t *Job) DecRunning() int {
 	return t.numOfTaskRunning
 }
 
+func (t *Job) GetRunning() int {
+	t.Lock()
+	defer t.Unlock()
+	return t.numOfTaskRunning
+}
+
 func (t *Job) IncFinishFrames(count int) int {
 	t.Lock()
 	defer t.Unlock()

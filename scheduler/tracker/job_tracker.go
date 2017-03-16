@@ -17,7 +17,7 @@ type jobTracker struct {
 	sync.Mutex
 	store        store.JobStore
 	jobMapping   map[int]map[*job.Task]string
-	id2Job map[int]*job.Job
+	id2Job       map[int]*job.Job
 	traceChannel chan *taskSnapShot
 }
 
@@ -130,7 +130,7 @@ func (tr *jobTracker) StopJobById(jobID int) bool {
 	return false
 }
 
-func  TraceTask(t *job.Task, addr string) {
+func TraceTask(t *job.Task, addr string) {
 	JobTracker.TraceTask(t, addr)
 }
 
@@ -146,10 +146,10 @@ func StopJobById(jobId int) bool {
 func InitWithStore(store store.JobStore) {
 	log.Printf("init job tracker")
 	JobTracker = jobTracker{
-		jobMapping: make(map[int]map[*job.Task]string), 
-		id2Job: make(map[int]*job.Job),
-		traceChannel: make(chan *taskSnapShot, 8), 
-		store: store,
+		jobMapping:   make(map[int]map[*job.Task]string),
+		id2Job:       make(map[int]*job.Job),
+		traceChannel: make(chan *taskSnapShot, 8),
+		store:        store,
 	}
 	go JobTracker.trace()
 }

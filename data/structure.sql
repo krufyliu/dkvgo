@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS `user` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `job` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS `job` (
   `update_at` datetime NOT NULL,
   PRIMARY KEY (`id`),
   KEY `job_creator_id` (`creator_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `job_state` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS `job_state` (
   `update_at` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `job_id` (`job_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 
 insert into user values(null, 'admin', 'admin@visiondk.com', '32cd9fbfcde4a88327a6afdd5efd9f82', '', null, '2016-03-12 20:39:42', '2016-03-12 20:39:42');
 -- insert into job values (null, 'test', '/data/video_dir/test', '/data/output_dir/test', '1200', '1250', '3D_AURA', '100', 'AURA', '4k', '1', '1', '1', 'true', '0', '0.0', '0', '0', '2016-03-09 16:51:42', '2016-03-09 16:51:42');

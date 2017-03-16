@@ -159,7 +159,7 @@ func (worker *Worker) handleREPORT(bag *protocol.HeartBeatBag) error {
 	// when stopping task or task fail, stop other relative task
 	if worker.relTask != nil {
 		var status = worker.relTask.Job.GetStatus()
-		if status == 0x03 || status == 0x06 {
+		if status == 0x03 || status == 0x04 || status == 0x06 {
 			pack, err = worker.makeStopTaskPack()
 		} else {
 			pack, err = worker.makePingPack()

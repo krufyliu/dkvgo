@@ -20,6 +20,13 @@ type DatabaseStore struct {
 	db     *sql.DB
 }
 
+func _checkError(err error) error {
+	if err == nil || err == sql.ErrNoRows {
+		return err
+	}
+	panic(err)
+}
+
 func NewDatabaseStore(dbType string, addr string) *DatabaseStore {
 	var ds = &DatabaseStore{dbType: dbType, dbAddr: addr}
 	ds.init()
@@ -28,15 +35,13 @@ func NewDatabaseStore(dbType string, addr string) *DatabaseStore {
 
 func (ds *DatabaseStore) init() {
 	db, err := sql.Open(ds.dbType, ds.dbAddr)
-	if err != nil {
-		panic(err)
-	}
+	_checkError(err)
 	ds.db = db
 	//
 	_, err = ds.db.Exec("update job set status='0' where status='1' or status='2'")
-	if err != nil {
-		panic(err)
-	}
+	_checkError(err)
+	_, err = ds.db.Exec("update job set status='4' where status='3'")
+	_checkError(err)
 }
 
 func (ds *DatabaseStore) GetJob() *job.Job {
@@ -56,11 +61,8 @@ func (ds *DatabaseStore) GetJob() *job.Job {
 		&_job.StartFrame, &_job.EndFrame, &_job.CameraType, &_job.Algorithm,
 		&_job.VideoDir, &_job.OutputDir, &_job.EnableTop, &_job.EnableBottom,
 		&_job.Quality, &_job.SaveDebugImg, &_job.EanbleColorAdjust)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil
-		}
-		panic(err)
+	if _checkError(err) == sql.ErrNoRows {
+		return nil
 	}
 	return &_job
 }
@@ -68,9 +70,7 @@ func (ds *DatabaseStore) GetJob() *job.Job {
 func (ds *DatabaseStore) UpdateJob(_job *job.Job) bool {
 	_, err := ds.db.Exec("update job set status=?, progress=?, update_at=? where id=?",
 		_job.Status, _job.CalcProgress(), time.Now().Format(TimeLayout), _job.ID)
-	if err != nil {
-		panic(err)
-	}
+	_checkError(err)
 	return true
 }
 
@@ -80,25 +80,19 @@ func (ds *DatabaseStore) SaveJobState(_job *job.Job) bool {
 		return true
 	}
 	content, err := json.Marshal(taskOpts)
-	if err != nil {
-		panic(err)
-	}
-	var updateSql = "update job_state set content=?, update_at=? where job_id=?"
-	result, err := ds.db.Exec(updateSql, content, time.Now().Format(TimeLayout), _job.ID)
-	if err != nil {
-		panic(err)
-	}
-	count, err := result.RowsAffected()
-	if err != nil {
-		panic(err)
-	}
-	var insertSql = `insert into job_state(job_id, content, create_at, update_at) values(?, ?, ?, ?)`
-	if count == 0 {
+	_checkError(err)
+	var _id int
+	var querySql = "select id from job_state where job_id=?"
+	err = ds.db.QueryRow(querySql, _job.ID).Scan(&_id)
+	if _checkError(err) == nil {
+		var updateSql = "update job_state set content=?, update_at=? where job_id=?"
+		_, err = ds.db.Exec(updateSql, content, time.Now().Format(TimeLayout), _job.ID)
+		_checkError(err)
+	} else {
 		var timeStr = time.Now().Format(TimeLayout)
+		var insertSql = `insert into job_state(job_id, content, create_at, update_at) values(?, ?, ?, ?)`
 		_, err = ds.db.Exec(insertSql, _job.ID, content, timeStr, timeStr)
-		if err != nil {
-			panic(err)
-		}
+		_checkError(err)
 	}
 	return true
 }
@@ -107,11 +101,8 @@ func (ds *DatabaseStore) LoadJobState(_job *job.Job) bool {
 	var content []byte
 	var row = ds.db.QueryRow("select content from job_state where job_id=?", _job.ID)
 	err := row.Scan(&content)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false
-		}
-		panic(err)
+	if _checkError(err) == sql.ErrNoRows {
+		return false
 	}
 	var taskOpts []*job.TaskOptions
 	if err := json.Unmarshal(content, &taskOpts); err != nil {
