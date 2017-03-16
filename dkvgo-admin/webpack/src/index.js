@@ -1,5 +1,6 @@
 import dva from 'dva'
 import { browserHistory } from 'dva/router'
+import createLoading from 'dva-loading'
 
 // 1. Initialize
 const app = dva({
@@ -8,12 +9,13 @@ const app = dva({
     console.error('app onError -- ', error)
   }
 })
-
-// 2. Model
+// 2. Plugin
+app.use(createLoading())
+// 3. Model
 app.model(require('./models/app'))
 
-// 3. Router
+// 4. Router
 app.router(require('./router'))
 
-// 4. Start
+// 5. Start
 app.start('#root')

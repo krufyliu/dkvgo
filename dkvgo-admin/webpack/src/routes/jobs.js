@@ -5,8 +5,8 @@ import JobList from '../components/jobs/list'
 import JobModal from '../components/jobs/modal'
 import JobSearch from '../components/jobs/search'
 
-function Jobs ({ location, dispatch, jobs }) {
-  const { loading, list, pagination, currentItem, modalVisible, modalType, isMotion } = jobs
+function Jobs ({ loading, location, dispatch, jobs }) {
+  const { list, pagination, currentItem, modalVisible, modalType, isMotion } = jobs
   const { field, keyword } = location.query
 
   const jobModalProps = {
@@ -28,7 +28,7 @@ function Jobs ({ location, dispatch, jobs }) {
 
   const jobListProps = {
     dataSource: list,
-    loading,
+    loading: loading.global,
     pagination: pagination,
     location,
     isMotion,
@@ -115,4 +115,4 @@ Jobs.propTypes = {
   dispatch: PropTypes.func
 }
 
-export default connect(({jobs}) => ({jobs}))(Jobs)
+export default connect(({jobs, loading}) => ({jobs, loading}))(Jobs)

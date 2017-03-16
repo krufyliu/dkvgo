@@ -6,7 +6,6 @@ export default {
 
   state: {
     list: [],
-    loading: false,
     currentItem: {},
     modalVisible: false,
     modalType: 'create',
@@ -35,7 +34,6 @@ export default {
 
   effects: {
     *query ({ payload }, { call, put}) {
-      yield put({ type: 'showLoading' })
       const data = yield call(query, parse(payload))
       if (data) {
         yield put({
@@ -48,7 +46,6 @@ export default {
       }
     },
     *'delete' ({ payload }, { call, put }) {
-      yield put({ type: 'showLoading' })
       const data = yield call(remove, { id: payload })
       if (data && data.success) {
         yield put({
@@ -65,7 +62,6 @@ export default {
     },
     *create ({ payload }, { call, put, select }) {
       yield put({ type: 'hideModal' })
-      yield put({ type: 'showLoading' })
       const data = yield call(create, payload)
       if (data && data.success) {
         window.location.reload()
@@ -73,7 +69,6 @@ export default {
     },
     *update ({ payload }, { select, call}) {
       yield put({ type: 'hideModal' })
-      yield put({ type: 'showLoading' })
       const id = yield select(({ jobs }) => jobs.currentItem.Id)
       const data = yield call(update, newUser)
       if (data && data.success) {
@@ -86,7 +81,6 @@ export default {
       }
     },
     *stop({payload}, {call, put}) {
-      yield put({type: 'showLoading'})
       const data = yield call(stop, {id: payload})      
       if (data && data.success) {
         yield put({
@@ -98,7 +92,6 @@ export default {
       }
     },
     *resume({payload}, {call, put}) {
-      yield put({type: 'showLoading'})
       const data = yield call(resume, {id: payload})      
       if (data && data.success) {
         yield put({
@@ -119,14 +112,10 @@ export default {
   },
 
   reducers: {
-    showLoading (state) {
-      return { ...state, loading: true }
-    },
     querySuccess (state, action) {
       const {list, pagination} = action.payload
       return { ...state,
         list,
-        loading: false,
         pagination: {
           ...state.pagination,
           ...pagination
@@ -138,7 +127,6 @@ export default {
       list.unshift(job)
       return { ...state,
         list,
-        loading: false,
         pagination: {
           ...state.pagination,
           total: state.pagination.total + 1
@@ -156,7 +144,6 @@ export default {
       }) 
       return { ...state,
         list,
-        loading: false
       }
     },
     showModal (state, action) {

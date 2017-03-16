@@ -5,8 +5,8 @@ import UserList from '../components/users/list'
 import UserSearch from '../components/users/search'
 import UserModal from '../components/users/modal'
 
-function Users ({ location, dispatch, users }) {
-  const { loading, list, pagination, currentItem, modalVisible, modalType, isMotion } = users
+function Users ({ loading, location, dispatch, users }) {
+  const { list, pagination, currentItem, modalVisible, modalType, isMotion } = users
   const { field, keyword } = location.query
 
   const userModalProps = {
@@ -28,7 +28,7 @@ function Users ({ location, dispatch, users }) {
 
   const userListProps = {
     dataSource: list,
-    loading,
+    loading: loading.global,
     pagination: pagination,
     location,
     isMotion,
@@ -106,4 +106,4 @@ Users.propTypes = {
   dispatch: PropTypes.func
 }
 
-export default connect(({users}) => ({users}))(Users)
+export default connect(({users, loading}) => ({users, loading}))(Users)

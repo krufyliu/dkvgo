@@ -7,8 +7,9 @@ module.exports = {
     case 2:
         return { 'status': "processing", 'text':"运行中" };
     case 3:
+        return { 'status': "error", 'text':"终止中" };
     case 4:
-        return { 'status': "error", 'text':"已停止" };
+        return { 'status': "error", 'text':"已终止" };
     case 5:
         return { 'status': "success", 'text':"完成" };
     case 6:
@@ -25,8 +26,9 @@ module.exports = {
     case 2:
         return { 'status': "active", 'text':"运行中" };
     case 3:
+        return { 'status': "normal", 'text':"终止中" };
     case 4:
-        return { 'status': "normal", 'text':"已停止" };
+        return { 'status': "normal", 'text':"已终止" };
     case 5:
         return { 'status': "success", 'text':"完成" };
     case 6:
@@ -39,7 +41,7 @@ module.exports = {
     var actions = {
         detail: { 'key': 'detail', 'text':'详情' },
         stop: { 'key': 'stop', 'text':'终止' },
-        resume: { 'key': 'resume', 'text':'重试' },
+        resume: { 'key': 'resume', 'text':'继续' },
     }
     var targetActions = [actions['detail']]
     switch(status) {
