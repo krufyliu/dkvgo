@@ -52,6 +52,14 @@ function list ({ loading, dataSource, pagination, onPageChange, onDeleteItem, on
       key: 'Quality'
     },
     {
+      title: '创建时间',
+      dataIndex: 'CreateAt',
+      key: 'CreateAt',
+      render: (text) => {
+        return (new Date(Date.parse(text))).format('yyyy-MM-dd HH:mm:ss')
+      }
+    },
+    {
       title: '更新时间',
       dataIndex: 'UpdateAt',
       key: 'UpdateAt',
