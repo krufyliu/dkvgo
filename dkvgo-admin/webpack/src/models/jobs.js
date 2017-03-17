@@ -45,7 +45,7 @@ export default {
             type: 'query',
             payload: location.query
           })
-          refresh(location)
+          // refresh(location)
         } else {
           if (timer != null) {
             clearInterval(timer)

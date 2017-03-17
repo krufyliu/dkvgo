@@ -1,5 +1,5 @@
 import React, { PropTypes } from 'react'
-import { Form, Input, InputNumber, Radio, Modal, Col } from 'antd'
+import { Form, Input, InputNumber, Radio, Modal,Row, Col, Button, Tooltip } from 'antd'
 
 const FormItem = Form.Item
 const RadioGroup = Radio.Group
@@ -23,7 +23,8 @@ const modal = ({
     getFieldDecorator,
     validateFieldsAndScroll,
     getFieldsValue,
-    getFieldValue
+    getFieldValue,
+    setFields
   }
 }) => {
   function handleOk (e) {
@@ -52,6 +53,25 @@ const modal = ({
     callback()
   }
 
+  function handleSwitch(e) {
+    var videoPath = getFieldValue('VideoDir')
+    if (typeof videoPath == 'undefined' || videoPath == "" ) {
+      return 
+    }
+    const originVal = '',
+          prePath = '\/dkvision',
+          windowsPath = new RegExp(/\w:+?\\+?([^\:\?"\<\>\|\.\\\/]+?[\\\b]{0,1})+?/);
+    if (windowsPath.test(videoPath)) {
+      videoPath = videoPath.slice(videoPath.indexOf(':') + 1)
+    } 
+    videoPath = videoPath.split(/[\\/]/).length > 2 ? videoPath .split(/[\\/]/).join('\/') : videoPath
+    videoPath = videoPath.indexOf(prePath) > 0 ? videoPath : prePath + videoPath
+    setFields({
+      VideoDir: { value: videoPath },
+      OutputDir: { value:videoPath.replace('/data/', '/output/') }
+    })
+  }
+
   const modalOpts = {
     title: `${type === 'create' ? '新建任务' : '修改任务'}`,
     visible,
@@ -75,16 +95,25 @@ const modal = ({
             ]
           })(<Input />)}
         </FormItem>
-        <FormItem label='视频路径：' hasFeedback {...formItemLayout}>
-          {getFieldDecorator('VideoDir', {
-            initialValue: item.VideoDir,
-            rules: [
-              {
-                required: true,
-                message: '视频路径不能为空'
-              }
-            ]
-          })(<Input autoComplete='off'/>)}
+        <FormItem label='视频路径：' {...formItemLayout}>
+          <Row>
+            <Col span={22}>
+            {getFieldDecorator('VideoDir', {
+              initialValue: item.VideoDir,
+              rules: [
+                {
+                  required: true,
+                  message: '视频路径不能为空'
+                }
+              ]
+            })(<Input size="large"/>)}
+            </Col>
+            <Col span={2}>
+              <Tooltip title="Windows路径转换">
+                <Button icon="retweet" size="large" onClick={handleSwitch}/>
+              </Tooltip>
+            </Col>
+          </Row>
         </FormItem>
         <FormItem label='输出路径：' hasFeedback {...formItemLayout}>
           {getFieldDecorator('OutputDir', {
@@ -150,7 +179,7 @@ const modal = ({
           )}
         </FormItem>
         <FormItem {...formItemLayout} label='生成顶底'>
-          {getFieldDecorator('EnableTop', { initialValue: item.EnableTop || '0' })(
+          {getFieldDecorator('EnableTop', { initialValue: item.EnableTop || '1' })(
             <RadioGroup>
               <Radio value="1">是</Radio>
               <Radio value="0">否</Radio>
