@@ -65,7 +65,7 @@ const modal = ({
       videoPath = videoPath.slice(videoPath.indexOf(':') + 1)
     } 
     videoPath = videoPath.split(/[\\/]/).length > 2 ? videoPath .split(/[\\/]/).join('\/') : videoPath
-    videoPath = videoPath.indexOf(prePath) > 0 ? videoPath : prePath + videoPath
+    videoPath = videoPath.indexOf(prePath) == 0 ? videoPath : prePath + videoPath
     setFields({
       VideoDir: { value: videoPath },
       OutputDir: { value:videoPath.replace('/data/', '/output/') }
