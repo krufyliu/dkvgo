@@ -40,7 +40,7 @@ func matchState(reader *bufio.Reader) (*job.TaskState, error) {
 		if err == io.EOF {
 			break
 		}
-		os.Stderr.WriteString(line)
+		os.Stdout.WriteString(line)
 		if matches := frameMatcher.FindStringSubmatch(line); matches != nil {
 			frameAt, _ = strconv.Atoi(matches[1])
 		} else if matches := prepareTimeMatcher.FindStringSubmatch(line); matches != nil {

@@ -8,7 +8,7 @@ import (
 )
 
 // TaskSplitNum define split level
-const TaskSplitNum = 8
+const TaskSplitNum = 6
 
 // Job define the basic information for running
 type Job struct {

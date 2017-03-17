@@ -14,18 +14,18 @@ import (
 type DkvScheduler struct {
 	sync.WaitGroup
 	mu          sync.Mutex
-	opts        *Options
+	opts        *_options
 	tcpListener net.Listener
 	TaskPool    *TaskPool
 	Store       store.JobStore
 	runningJobs map[int]*job.Job
 }
 
-func NewDkvScheduler(opts *Options) *DkvScheduler {
+func newDkvScheduler() *DkvScheduler {
 	var sched = &DkvScheduler{
-		opts: opts,
+		opts: Options,
 		//Store: store.NewMockStore(),
-		Store: store.NewDatabaseStore(opts.DBType, opts.DBAddr),
+		Store: store.NewDatabaseStore(Options.DBType, Options.DBAddr),
 	}
 	sched.TaskPool = NewTaskPool(sched)
 	return sched
