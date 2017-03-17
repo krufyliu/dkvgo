@@ -15,18 +15,41 @@ export default {
       showQuickJumper: true,
       showTotal: total => `共 ${total} 条`,
       current: 1,
+      pageSize: 10,
       total: null
     }
   },
 
   subscriptions: {
-    setup ({ dispatch, history }) {
+    setup ({ dispatch, history}) {
+      var timer = null
+      function refresh(location) {
+        timer = setInterval(() => {
+          console.log('refresh')
+          // if (jobs != null) {
+          //   const filtered = jobs.list.filter((item) => item.Status == 1 || item.Status == 2)
+          //   if (filtered.length === 0) {
+          //     clearInterval(timer)
+          //     timer = null
+          //   }
+          // }
+          dispatch({
+            type: 'query',
+            payload: location.query
+          })
+        }, 30000)
+      }
       history.listen(location => {
         if (location.pathname === '/jobs') {
           dispatch({
             type: 'query',
             payload: location.query
           })
+          refresh(location)
+        } else {
+          if (timer != null) {
+            clearInterval(timer)
+          }
         }
       })
     }
