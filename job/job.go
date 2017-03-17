@@ -1,15 +1,16 @@
 package job
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"sync"
+	"time"
 )
 
 // TaskSplitNum define split level
-const TaskSplitNum = 8
+const TaskSplitNum = 6
 
-// Job define video composition
+// Job define the basic information for running
 type Job struct {
 	sync.Mutex
 	ID                int            `json:"id"`
@@ -26,8 +27,10 @@ type Job struct {
 	EnableBottom      string         `json:"enable_bottom"`
 	EnableTop         string         `json:"enable_top"`
 	Quality           string         `json:"quality"`
+	SaveDebugImg      string         `json:"save_debug_img"`
 	EanbleColorAdjust string         `json:"enable_coloradjust"`
 	TaskOpts          []*TaskOptions `json:"-"`
+	LastRecord        time.Time      `json:"-"`
 	numOfCompleteTask int
 	finishFrames      int
 	numOfTaskRunning  int
@@ -63,7 +66,7 @@ func (t *Job) split() {
 func (t *Job) Init() {
 	t.split()
 	for _, opt := range t.TaskOpts {
-		if opt.FrameAt == opt.EndFrame + 1 {
+		if opt.FrameAt == opt.EndFrame+1 {
 			t.numOfCompleteTask++
 		}
 		t.finishFrames += opt.FrameAt - opt.StartFrame
@@ -121,6 +124,12 @@ func (t *Job) DecRunning() int {
 	return t.numOfTaskRunning
 }
 
+func (t *Job) GetRunning() int {
+	t.Lock()
+	defer t.Unlock()
+	return t.numOfTaskRunning
+}
+
 func (t *Job) IncFinishFrames(count int) int {
 	t.Lock()
 	defer t.Unlock()
@@ -143,7 +152,7 @@ func (t *Job) HasCompleted() bool {
 }
 
 func (t *Job) String() string {
-	return fmt.Sprintf("Job-%d(%d-%d)", t.ID, t.StartFrame, t.EndFrame)
+	return fmt.Sprintf("Job-%d(%d-%d/%d)", t.ID, t.StartFrame, t.EndFrame, t.Status)
 }
 
 // TaskOptions describle video composition parameters

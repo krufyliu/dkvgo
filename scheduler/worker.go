@@ -13,6 +13,7 @@ import (
 
 	"github.com/krufyliu/dkvgo/job"
 	"github.com/krufyliu/dkvgo/protocol"
+	"github.com/krufyliu/dkvgo/scheduler/tracker"
 )
 
 type Worker struct {
@@ -24,8 +25,16 @@ type Worker struct {
 	relTask    *job.Task
 }
 
+func (worker *Worker) RemoteAddr() string {
+	if worker.conn == nil {
+		return ""
+	}
+	return worker.conn.RemoteAddr().String()
+}
+
 func (worker *Worker) Attach(ts *job.Task) {
 	worker.relTask = ts
+	tracker.TraceTask(worker.relTask, worker.RemoteAddr())
 }
 
 func (worker *Worker) Dettach() *job.Task {
@@ -93,7 +102,6 @@ func (worker *Worker) runLoop() {
 }
 
 func (worker *Worker) makeOnePullResponse() error {
-	log.Printf("%s waiting for pull request...\n", worker.conn.RemoteAddr())
 	pack, err := worker.receivePackage()
 	if err != nil {
 		return err
@@ -151,7 +159,7 @@ func (worker *Worker) handleREPORT(bag *protocol.HeartBeatBag) error {
 	// when stopping task or task fail, stop other relative task
 	if worker.relTask != nil {
 		var status = worker.relTask.Job.GetStatus()
-		if status == 0x03 || status == 0x06 {
+		if status == 0x03 || status == 0x04 || status == 0x06 {
 			pack, err = worker.makeStopTaskPack()
 		} else {
 			pack, err = worker.makePingPack()
@@ -166,47 +174,10 @@ func (worker *Worker) handleREPORT(bag *protocol.HeartBeatBag) error {
 }
 
 func (worker *Worker) dealWithStatus(state *job.TaskState) {
-	log.Printf("%s %s report: %s\n", worker.conn.RemoteAddr(), worker.relTask, state)
-	var oldState = worker.relTask.GetState()
-	if oldState == nil {
-		worker.relTask.UpdateState(state)
-	} else if oldState.FrameAt < state.FrameAt {
-		worker.relTask.Job.IncFinishFrames(state.FrameAt - oldState.FrameAt)
-		worker.relTask.UpdateState(state)
-		worker.ctx.Store.SaveJobState(worker.relTask.Job)
-		log.Printf("%s progress: %d/%d/%.2f%%\n",
-			worker.relTask.Job,
-			worker.relTask.Job.TotalFrames(),
-			worker.relTask.Job.GetFinishFrames(),
-			worker.relTask.Job.CalcProgress())
-	}
-
-	switch state.Status {
-	case "DONE":
-		if worker.relTask.Job.TaskDone() {
-			if worker.relTask.Job.CompareStatusAndSwap(0x05, 0x02) {
-				worker.ctx.Store.UpdateJob(worker.relTask.Job)
-			}
-		}
-		worker.relTask.Job.DecRunning()
+	log.Printf("%s %s report: %s\n", worker.RemoteAddr(), worker.relTask, state)
+	tracker.TraceTaskWithState(worker.relTask, worker.RemoteAddr(), state)
+	if state.Status != "RUNNING" {
 		worker.Dettach()
-	case "STOPPED":
-		if worker.relTask.Job.DecRunning() == 0 {
-			if worker.relTask.Job.CompareStatusAndSwap(0x04, 0x03) {
-				worker.ctx.Store.UpdateJob(worker.relTask.Job)
-			}
-		}
-		worker.Dettach()
-	case "FAILED":
-		if worker.relTask.Job.CompareStatusAndSwap(0x06, 0x02, 0x01) {
-			worker.ctx.Store.UpdateJob(worker.relTask.Job)
-		}
-		worker.relTask.Job.DecRunning()
-		worker.Dettach()
-	default:
-		if worker.relTask.Job.CompareStatusAndSwap(0x02, 0x01) {
-			worker.ctx.Store.UpdateJob(worker.relTask.Job)
-		}
 	}
 }
 
