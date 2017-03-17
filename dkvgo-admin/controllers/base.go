@@ -19,11 +19,11 @@ type BaseController struct {
 func (this *BaseController) Prepare() {
 	if this.Ctx.Input.Method() == "POST" && this.Ctx.Input.URI() == "/api/auth" {
 		if this.IsLogin() {
-			this.ShowErrorMsg("has authorized")
+			this.ShowErrorMsg("已经登录过了")
 		}
 	} else {
 		if !this.IsLogin() {
-			this.ShowErrorMsg("already authorized")
+			this.ShowErrorMsg("未登录")
 		}
 	}
 }
