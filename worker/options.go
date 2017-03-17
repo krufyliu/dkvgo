@@ -27,7 +27,7 @@ func NewOptions() *Options {
 	}
 }
 
-var schedulerAddHelp = "Schduler tcp addr, non empty, eg 127.0.0.1:8765. Defualt port 7654."
+var schedulerAddHelp = "Schduler tcp addr, non empty."
 var maxRetryHelp = "Max retry times when lost connection."
 var maxRetryWaitTimeHelp = "Max wait time before next connection."
 
@@ -44,8 +44,8 @@ func (opt *Options) fromCmdArgs(args []string) error {
 	var maxRetry int
 	var maxRetryWaitTime int
 
-	workerFlagSet.StringVar(&schedulerAddr, "scheduler-addr", "", schedulerAddHelp)
-	workerFlagSet.StringVar(&schedulerAddr, "s", "", schedulerAddHelp+" short for scheduler-addr")
+	workerFlagSet.StringVar(&schedulerAddr, "scheduler-addr", ":9876", schedulerAddHelp)
+	workerFlagSet.StringVar(&schedulerAddr, "s", ":9876", schedulerAddHelp+" short for scheduler-addr")
 	workerFlagSet.IntVar(&maxRetry, "max-retry", 0, maxRetryHelp)
 	workerFlagSet.IntVar(&maxRetry, "r", 0, maxRetryHelp+" short for max-retry")
 	workerFlagSet.IntVar(&maxRetryWaitTime, "max-retry-wait-time", 90, maxRetryWaitTimeHelp)
